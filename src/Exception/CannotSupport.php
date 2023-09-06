@@ -9,7 +9,7 @@ use RuntimeException;
 /*
  * This exception occurs if your Open API is readable but cannot be supported by Membrane.
  */
-class CannotSupport extends RuntimeException
+final class CannotSupport extends RuntimeException
 {
     public const UNSUPPORTED_METHOD = 0;
     public const UNSUPPORTED_VERSION = 1;

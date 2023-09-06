@@ -9,7 +9,7 @@ use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI}
 use Symfony\Component\Yaml\Exception\ParseException;
 use TypeError;
 
-class Reader
+final class Reader
 {
     /** @param OpenAPIVersion[] $supportedVersions */
     public function __construct(

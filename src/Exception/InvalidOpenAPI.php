@@ -9,7 +9,7 @@ use RuntimeException;
 /*
  * This exception occurs if your Open API is invalid according to the OpenAPI Specification
  */
-class InvalidOpenAPI extends RuntimeException
+final class InvalidOpenAPI extends RuntimeException
 {
     public const INVALID_OPEN_API = 0;
 

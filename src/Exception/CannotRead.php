@@ -12,7 +12,7 @@ use RuntimeException;
  * 1: The file, or its references, cannot be found
  * 2: The data is invalid according to the associated format's specification
  */
-class CannotRead extends RuntimeException
+final class CannotRead extends RuntimeException
 {
     public const FILE_NOT_FOUND = 0;
     public const UNMATCHED_FILE_TYPE = 1;
