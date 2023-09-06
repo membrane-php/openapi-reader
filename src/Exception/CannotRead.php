@@ -37,6 +37,12 @@ final class CannotRead extends RuntimeException
         return new self($message, self::INVALID_FORMATTING, $e);
     }
 
+    public static function cannotResolveExternalReferencesFromString(): self
+    {
+        $message = 'External References cannot be resolved when reading from string';
+        return new self($message, self::UNRESOLVEABLE_REFERENCE);
+    }
+
     public static function unresolvedReference(\Throwable $e): self
     {
         $message = 'References could not be resolved';

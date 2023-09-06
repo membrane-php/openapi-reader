@@ -46,6 +46,10 @@ final class Reader
 
     public function readFromString(string $openAPI, FileFormat $fileFormat): CebeSpec\OpenApi
     {
+        if (preg_match('#\s*[\'\"]?\$ref[\'\"]?\s*:\s*[\'\"]?[^\s\'\"\#]#', $openAPI)) {
+            throw CannotRead::cannotResolveExternalReferencesFromString();
+        }
+
         try {
             $openAPI = match ($fileFormat) {
                 FileFormat::Json => Cebe\Reader::readFromJson($openAPI),
@@ -57,11 +61,8 @@ final class Reader
 
         $this->validate($openAPI);
 
-        try {
-            $openAPI->resolveReferences(new Cebe\ReferenceContext($openAPI, '/tmp'));
-        } catch (CebeException\UnresolvableReferenceException $e) {
-            throw CannotRead::unresolvedReference($e);
-        }
+
+        $openAPI->resolveReferences(new Cebe\ReferenceContext($openAPI, '/tmp'));
 
 
         return $openAPI;
