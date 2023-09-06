@@ -2,13 +2,14 @@
 
 This library is intended to be used in conjunction with other Membrane libraries.
 
-It wraps the [php-openapi](https://github.com/cebe/php-openapi) library with some additional validation, including 
+It wraps the [php-openapi](https://github.com/cebe/php-openapi) library with some additional validation, including
 Membrane-specific requirements.
 
 ## Requirements
 
 - A valid [OpenAPI specification](https://github.com/OAI/OpenAPI-Specification#readme).
-- An operationId on all [Operation Objects](https://spec.openapis.org/oas/v3.1.0#operation-object) so that each route is uniquely identifiable.
+- An operationId on all [Operation Objects](https://spec.openapis.org/oas/v3.1.0#operation-object) so that each route is
+  uniquely identifiable.
 
 ## Installation
 
@@ -30,7 +31,8 @@ $reader = new \Membrane\OpenAPIReader\Reader($versions);
 
 This method is the main use-case of the reader and is capable of _resolving all references._
 
-If your file path contains the file extension then the reader can use this to determine which language the OpenAPI is written in.
+If your file path contains the file extension then the reader can use this to determine which language the OpenAPI is
+written in.
 
 ```php
 // code to instantiate reader... 
@@ -50,9 +52,9 @@ $reader->readFromAbsoluteFilePath('my-openapi', $fileFormat);
 
 ### Read From A String
 
-This method is only capable of resolving 
-[Reference Objects](https://spec.openapis.org/oas/v3.1.0#reference-object-example), 
-it cannot resolve references to 
+This method is only capable of resolving
+[Reference Objects](https://spec.openapis.org/oas/v3.1.0#reference-object-example),
+it cannot resolve references to
 [Relative Documents](https://spec.openapis.org/oas/v3.1.0#relative-schema-document-example)
 .
 
