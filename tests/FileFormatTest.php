@@ -18,8 +18,11 @@ class FileFormatTest extends TestCase
     public static function provideSupportedFileExtensions(): Generator
     {
         yield 'json' => [FileFormat::Json, 'json'];
+        yield 'JSON' => [FileFormat::Json, 'JSON'];
         yield 'yaml' => [FileFormat::Yaml, 'yaml'];
+        yield 'YAML' => [FileFormat::Yaml, 'YAML'];
         yield 'yml' => [FileFormat::Yaml, 'yml'];
+        yield 'YML' => [FileFormat::Yaml, 'YML'];
     }
 
     #[Test, TestDox('it supports file extensions used for OpenAPI')]

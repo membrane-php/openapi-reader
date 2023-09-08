@@ -20,17 +20,12 @@ final class InvalidOpenAPI extends RuntimeException
         string $secondPath,
         string $secondMethod
     ): self {
-        $message = sprintf(
-            "A valid OpenAPI must contain unique operationIds across the API.\n" .
-            "The operationId: '%s' is duplicated between the following operations:\n" .
-            "\tPath: '%s', Method: '%s'\n" .
-            "\tPath: '%s', Method: '%s'\n",
-            $operationId,
-            $firstPath,
-            $firstMethod,
-            $secondPath,
-            $secondMethod
-        );
+        $message = <<<TEXT
+            A valid OpenAPI must contain unique operationIds across the API.
+            The operationId: '$operationId' is duplicated between the following operations:
+            Path: '$firstPath', Method: '$firstMethod'.
+            Path: '$secondPath', Method: '$secondMethod'.
+            TEXT;
 
         return new self($message, self::INVALID_OPEN_API);
     }
