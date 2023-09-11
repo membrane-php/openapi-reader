@@ -40,7 +40,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function itCannotReadFilesItCannotFind(): void
     {
-        $filePath = vfsStream::setup()->url() . '/open-api';
+        $filePath = vfsStream::setup()->url() . '/openapi';
 
         self::assertFalse(file_exists($filePath));
 
@@ -72,7 +72,21 @@ class ReaderTest extends TestCase
 
     #[Test]
     #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCannotSupportUnspecifiedOpenAPIVersions(array $openAPIArray): void
+    public function itCannotSupportUnspecifiedOpenAPIVersionsFromAbsoluteFilePath(array $openAPIArray): void
+    {
+
+        $filePath = vfsStream::setup()->url() . '/openapi';
+        file_put_contents($filePath, json_encode($openAPIArray));
+
+        self::expectExceptionObject(CannotSupport::unsupportedVersion($openAPIArray['openapi']));
+
+        (new Reader([OpenAPIVersion::Version_3_1]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+    }
+
+    #[Test]
+    #[DataProvider('provideMinimalOpenAPIAsArray')]
+    public function itCannotSupportUnspecifiedOpenAPIVersionsFromString(array $openAPIArray): void
     {
         self::expectExceptionObject(CannotSupport::unsupportedVersion($openAPIArray['openapi']));
 
@@ -82,7 +96,20 @@ class ReaderTest extends TestCase
 
     #[Test]
     #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCanSupportSpecifiedOpenAPIVersions(array $openAPIArray): void
+    public function itCanSupportSpecifiedOpenAPIVersionsFromAbsoluteFilePath(array $openAPIArray): void
+    {
+        $filePath = vfsStream::setup()->url() . '/openapi';
+        file_put_contents($filePath, json_encode($openAPIArray));
+
+        $openAPIObject = (new Reader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+
+        self::assertInstanceOf(CebeSpec\OpenApi::class, $openAPIObject);
+    }
+
+    #[Test]
+    #[DataProvider('provideMinimalOpenAPIAsArray')]
+    public function itCanSupportSpecifiedOpenAPIVersionsFromString(array $openAPIArray): void
     {
         $openAPIObject = (new Reader([OpenAPIVersion::Version_3_0]))
             ->readFromString(json_encode($openAPIArray), FileFormat::Json);
@@ -107,6 +134,10 @@ class ReaderTest extends TestCase
         yield 'Empty string to be interpreted as yaml' => ['', FileFormat::Yaml];
         yield 'Invalid json format' => ['{openapi: ",', FileFormat::Json];
         yield 'Invalid yaml format' => ['---openapi: ",- title: "invalid"', FileFormat::Yaml];
+        yield 'info is a string rather than an array' => [
+            json_encode(['openapi' => '3.0.0', 'info' => 'hold on what is this?', 'paths' => []]),
+            FileFormat::Json
+        ];
     }
 
     #[Test]
@@ -179,7 +210,22 @@ class ReaderTest extends TestCase
 
     #[Test]
     #[DataProvider('provideInvalidOpenAPIs')]
-    public function itWillNotProcessInvalidOpenAPI(string $openAPIString, InvalidOpenAPI $expectedException): void
+    public function itWillNotProcessInvalidOpenAPIFromAbsoluteFilePath(
+        string $openAPIString,
+        InvalidOpenAPI $expectedException
+    ): void {
+        $filePath = vfsStream::setup()->url() . '/openapi.json';
+        file_put_contents($filePath, $openAPIString);
+
+        self::expectExceptionObject($expectedException);
+
+        (new Reader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidOpenAPIs')]
+    public function itWillNotProcessInvalidOpenAPIFromString(string $openAPIString, InvalidOpenAPI $expectedException): void
     {
         self::expectExceptionObject($expectedException);
 

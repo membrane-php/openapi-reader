@@ -17,12 +17,10 @@ final class CannotSupport extends RuntimeException
 
     public static function unsupportedMethod(string $pathUrl, string $method): self
     {
-        $message = sprintf(
-            "Membrane does not currently support the method: '%s'\n" .
-            'Found on Path: "%s"',
-            $method,
-            $pathUrl
-        );
+        $message = <<<TEXT
+            Membrane does not currently support the method: '$method'.
+            Found on Path: '$pathUrl'
+            TEXT;
         return new self($message, self::UNSUPPORTED_METHOD);
     }
 
@@ -40,14 +38,12 @@ final class CannotSupport extends RuntimeException
 
     public static function missingOperationId(string $pathUrl, string $method): self
     {
-        $message = sprintf(
-            "Membrane requires an operationId on all operations.\n" .
-            "operationId is missing for the following operation:\n" .
-            "\tPath: '%s'\n" .
-            "\tMethod: '%s'",
-            $pathUrl,
-            $method
-        );
+        $message = <<<TEXT
+            Membrane requires an operationId on all operations.
+            operationId is missing for the following operation:
+            Path: '$pathUrl'
+            Method: '$method'
+            TEXT;
         return new self($message, self::MISSING_OPERATION_ID);
     }
 }

@@ -17,6 +17,12 @@
     "phpunit/phpunit": "^10.1",
     "phpstan/phpstan": "^1.10.19",
     "squizlabs/php_codesniffer": "^3.7",
-    "mikey179/vfsstream": "^1.6.7"
+    "mikey179/vfsstream": "^1.6.7",
+    "infection/infection": "^0.27.0"
+  },
+  "config": {
+    "allow-plugins": {
+      "infection/extension-installer": true
+    }
   }
 }
