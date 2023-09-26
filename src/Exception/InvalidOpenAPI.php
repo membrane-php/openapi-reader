@@ -30,6 +30,14 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message, self::INVALID_OPEN_API);
     }
 
+    public static function mustHaveSchemaXorContent(string $name): self
+    {
+        return new self(
+            sprintf('Parameter "%s" MUST have either a Schema or Content, but not both.', $name),
+            self::INVALID_OPEN_API
+        );
+    }
+
     public static function failedCebeValidation(string ...$errors): self
     {
         $message = sprintf("OpenAPI is invalid for the following reasons:\n\t- %s", implode("\n\t- ", $errors));

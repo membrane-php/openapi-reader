@@ -70,14 +70,16 @@ final class Reader
     {
         $this->isVersionSupported($openAPI->openapi) ?: throw CannotSupport::unsupportedVersion($openAPI->openapi);
 
-        $openAPI->validate() ?: throw InvalidOpenAPI::failedCebeValidation(...$openAPI->getErrors());
-
         $existingOperationIds = [];
 
         // OpenAPI Version 3.1 does not require paths
         if (isset($openAPI->paths)) {
             foreach ($openAPI->paths as $pathUrl => $path) {
+                $this->parametersContainSchemaXorContent($path);
+
                 foreach ($path->getOperations() as $method => $operation) {
+                    $this->parametersContainSchemaXorContent($operation);
+
                     Method::tryFrom($method) !== null ?: throw CannotSupport::unsupportedMethod($pathUrl, $method);
 
                     isset($operation->operationId) ?: throw CannotSupport::missingOperationId($pathUrl, $method);
@@ -95,10 +97,29 @@ final class Reader
                 }
             }
         }
+
+        $openAPI->validate() ?: throw InvalidOpenAPI::failedCebeValidation(...$openAPI->getErrors());
     }
 
     private function isVersionSupported(string $version): bool
     {
         return in_array(OpenAPIVersion::fromString($version), $this->supportedVersions, true);
+    }
+
+    private function parametersContainSchemaXorContent(CebeSpec\PathItem | CebeSpec\Operation $specObject): void
+    {
+        foreach ($specObject->parameters as $parameter) {
+            assert($parameter instanceof CebeSpec\Parameter);
+
+            $result = isset($parameter->schema);
+
+            if (!empty($parameter->content)) {
+                $result = !$result;
+            }
+
+            if (!$result) {
+                throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
+            }
+        }
     }
 }

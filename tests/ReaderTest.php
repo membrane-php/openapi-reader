@@ -206,6 +206,62 @@ class ReaderTest extends TestCase
             })(),
             InvalidOpenAPI::duplicateOperationIds('duplicate-id', '/firstpath', 'get', '/secondpath', 'get'),
         ];
+
+        yield 'path with parameter missing both schema and content' => [
+            (function () use ($openAPI, $openAPIPath) {
+                $openAPIArray = $openAPI;
+                $path = $openAPIPath('get-first-path');
+                $path['parameters'] = [['name' => 'param', 'in' => 'query']];
+                $openAPIArray['paths'] = ['/firstpath' => ['get' => $path]];
+                return json_encode($openAPIArray);
+            })(),
+            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+        ];
+
+        yield 'path with parameter both schema and content' => [
+            (function () use ($openAPI, $openAPIPath) {
+                $openAPIArray = $openAPI;
+                $openAPIArray['paths'] = ['/firstpath' => [
+                    'parameters' => [[
+                        'name' => 'param',
+                        'in' => 'query',
+                        'schema' => ['type' => 'string'],
+                        'content' => ['application/json' => ['type' => 'string']]
+                    ]],
+                    'get' => $openAPIPath('get-first-path')
+                ],];
+                return json_encode($openAPIArray);
+            })(),
+            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+        ];
+
+        yield 'path with operation missing both schema and content' => [
+            (function () use ($openAPI, $openAPIPath) {
+                $openAPIArray = $openAPI;
+                $openAPIArray['paths'] = ['/firstpath' => [
+                    'parameters' => [['name' => 'param', 'in' => 'query']],
+                    'get' => $openAPIPath('get-first-path')
+                ]];
+                return json_encode($openAPIArray);
+            })(),
+            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+        ];
+
+        yield 'path with operation both schema and content' => [
+            (function () use ($openAPI, $openAPIPath) {
+                $openAPIArray = $openAPI;
+                $path = $openAPIPath('get-first-path');
+                $path['parameters'] = [[
+                    'name' => 'param',
+                    'in' => 'query',
+                    'schema' => ['type' => 'string'],
+                    'content' => ['application/json' => ['type' => 'string']]
+                ]];
+                $openAPIArray['paths'] = ['/firstpath' => ['get' => $path],];
+                return json_encode($openAPIArray);
+            })(),
+            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+        ];
     }
 
     #[Test]
