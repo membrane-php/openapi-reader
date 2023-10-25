@@ -59,7 +59,11 @@ final class Reader
             throw CannotRead::invalidFormatting($e);
         }
 
-        $openAPI->resolveReferences(new Cebe\ReferenceContext($openAPI, '/tmp'));
+        try {
+            $openAPI->resolveReferences(new Cebe\ReferenceContext($openAPI, '/tmp'));
+        } catch (CebeException\UnresolvableReferenceException $e) {
+            throw CannotRead::unresolvedReference($e);
+        }
 
         $this->validate($openAPI);
 
