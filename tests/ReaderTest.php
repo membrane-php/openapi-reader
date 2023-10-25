@@ -428,4 +428,63 @@ class ReaderTest extends TestCase
         (new Reader([OpenAPIVersion::Version_3_0]))
             ->readFromString($openAPIString, FileFormat::Json);
     }
+
+    public static function provideOpenAPIWithInvalidReference(): Generator
+    {
+        yield 'missing forward slash after hash' => [
+            json_encode([
+                'openapi' => '3.0.0',
+                'info' => ['title' => 'API With Reference Object', 'version' => '1.0.0'],
+                'paths' => [
+                    '/path' => [
+                        'get' => [
+                            'operationId' => 'get-path',
+                            'responses' => [
+                                200 => [
+                                    'description' => 'Successful Response',
+                                    'content' => [
+                                        'application/json' => [
+                                            'schema' => [
+                                                '$ref' => '#components/schemas/Test',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'components' => [
+                    'schemas' => [
+                        'Test' => [
+                            'type' => 'integer',
+                        ]
+                    ]
+                ]
+            ]),
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithInvalidReference')]
+    public function itCannotResolveInvalidReferenceFromAbsoluteFilePath(string $openAPIString): void
+    {
+        vfsStream::setup();
+        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
+
+        self::expectExceptionObject(CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException()));
+
+        (new Reader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'));
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithInvalidReference')]
+    public function itCannotResolveInvalidReferenceFromString(string $openAPIString,): void
+    {
+        self::expectExceptionObject(CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException()));
+
+        (new Reader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Json);
+    }
 }
