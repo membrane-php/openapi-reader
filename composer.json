@@ -4,8 +4,12 @@
   "license": "MPL-2.0",
   "autoload": {
     "psr-4": {
-      "Membrane\\OpenAPIReader\\": "src/",
-      "Membrane\\OpenAPIReader\\Fixtures\\": "tests/fixtures/",
+      "Membrane\\OpenAPIReader\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Membrane\\OpenAPIReader\\Tests\\Fixtures\\": "tests/fixtures/",
       "Membrane\\OpenAPIReader\\Tests\\": "tests/"
     }
   },
