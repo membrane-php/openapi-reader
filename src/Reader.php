@@ -6,6 +6,7 @@ namespace Membrane\OpenAPIReader;
 
 use cebe\{openapi as Cebe, openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
+use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Symfony\Component\Yaml\Exception\ParseException;
 use TypeError;
 
@@ -74,33 +75,7 @@ final class Reader
     {
         $this->isVersionSupported($openAPI->openapi) ?: throw CannotSupport::unsupportedVersion($openAPI->openapi);
 
-        $existingOperationIds = [];
-
-        // OpenAPI Version 3.1 does not require paths
-        if (isset($openAPI->paths)) {
-            foreach ($openAPI->paths as $pathUrl => $path) {
-                $this->parametersContainSchemaXorContent($path);
-
-                foreach ($path->getOperations() as $method => $operation) {
-                    $this->parametersContainSchemaXorContent($operation);
-
-                    Method::tryFrom($method) !== null ?: throw CannotSupport::unsupportedMethod($pathUrl, $method);
-
-                    isset($operation->operationId) ?: throw CannotSupport::missingOperationId($pathUrl, $method);
-
-                    if (isset($existingOperationIds[$operation->operationId])) {
-                        throw InvalidOpenAPI::duplicateOperationIds(
-                            $operation->operationId,
-                            $existingOperationIds[$operation->operationId]['path'],
-                            $existingOperationIds[$operation->operationId]['method'],
-                            $pathUrl,
-                            $method
-                        );
-                    }
-                    $existingOperationIds[$operation->operationId] = ['path' => $pathUrl, 'method' => $method];
-                }
-            }
-        }
+        FromCebe::createOpenAPI($openAPI);
 
         $openAPI->validate() ?: throw InvalidOpenAPI::failedCebeValidation(...$openAPI->getErrors());
     }
@@ -108,22 +83,5 @@ final class Reader
     private function isVersionSupported(string $version): bool
     {
         return in_array(OpenAPIVersion::fromString($version), $this->supportedVersions, true);
-    }
-
-    private function parametersContainSchemaXorContent(CebeSpec\PathItem | CebeSpec\Operation $specObject): void
-    {
-        foreach ($specObject->parameters as $parameter) {
-            assert($parameter instanceof CebeSpec\Parameter);
-
-            $result = isset($parameter->schema);
-
-            if (!empty($parameter->content)) {
-                $result = !$result;
-            }
-
-            if (!$result) {
-                throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
-            }
-        }
     }
 }

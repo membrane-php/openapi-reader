@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\Tests;
 
-use cebe\{openapi as Cebe, openapi\exceptions as CebeException, openapi\spec as CebeSpec};
+use cebe\{openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Generator;
-use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\{FileFormat, Method, OpenAPIVersion};
+use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
+use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\Reader;
+use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid;
+use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
 use PHPUnit\Framework\TestCase;
@@ -17,6 +21,22 @@ use TypeError;
 #[CoversClass(Reader::class)]
 #[CoversClass(CannotRead::class), CoversClass(CannotSupport::class), CoversClass(InvalidOpenAPI::class)]
 #[UsesClass(FileFormat::class), UsesClass(Method::class), UsesClass(OpenAPIVersion::class)]
+#[UsesClass(FromCebe::class)]
+#[UsesClass(Identifier::class)]
+#[UsesClass(Partial\OpenAPI::class)]
+#[UsesClass(Valid\V30\OpenAPI::class)]
+#[UsesClass(Partial\Operation::class)]
+#[UsesClass(Valid\V30\Operation::class)]
+#[UsesClass(Partial\PathItem::class)]
+#[UsesClass(Valid\V30\PathItem::class)]
+#[UsesClass(Partial\Parameter::class)]
+#[UsesClass(Valid\V30\Parameter::class)]
+#[UsesClass(Partial\MediaType::class)]
+#[UsesClass(Partial\Schema::class)]
+#[UsesClass(Valid\V30\Schema::class)]
+#[UsesClass(Valid\Validated::class)]
+#[UsesClass(Valid\Warning::class)]
+#[UsesClass(Valid\Warnings::class)]
 class ReaderTest extends TestCase
 {
     private string $petstorePath = __DIR__ . '/fixtures/petstore.yaml';
@@ -173,7 +193,7 @@ class ReaderTest extends TestCase
             $jsonOpenAPIString = json_encode(['openapi' => '3.0.0']);
             return [
                 $jsonOpenAPIString,
-                InvalidOpenAPI::failedCebeValidation(...Cebe\Reader::readFromJson($jsonOpenAPIString)->getErrors()),
+                InvalidOpenAPI::missingInfo(),
             ];
         })();
 
@@ -181,6 +201,23 @@ class ReaderTest extends TestCase
         $openAPIPath = fn($operationId) => [
             'operationId' => $operationId,
             'responses' => [200 => ['description' => ' Successful Response']],
+        ];
+
+        yield 'paths with same template' => [
+            (function () use ($openAPI, $openAPIPath) {
+                $openAPIArray = $openAPI;
+                $openAPIArray['paths']['/path/{param1}'] = [
+                    'get' => $openAPIPath('id-1'),
+                ];
+                $openAPIArray['paths']['/path/{param2}'] = [
+                    'get' => $openAPIPath('id-2'),
+                ];
+                return json_encode($openAPIArray);
+            })(),
+            InvalidOpenAPI::equivalentTemplates(
+                new Identifier('(1.0.0)', '/path/{param1}'),
+                new Identifier('(1.0.0)', '/path/{param2}'),
+            ),
         ];
 
         yield 'duplicate operationIds on the same path' => [
@@ -284,38 +321,6 @@ class ReaderTest extends TestCase
     public function itWillNotProcessInvalidOpenAPIFromString(string $openAPIString, InvalidOpenAPI $expectedException): void
     {
         self::expectExceptionObject($expectedException);
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString($openAPIString, FileFormat::Json);
-    }
-
-    public static function provideUnsupportedMethods(): Generator
-    {
-        yield 'HEAD' => ['head'];
-        yield 'OPTIONS' => ['options'];
-        yield 'TRACE' => ['trace'];
-    }
-
-    #[Test, TestDox('It only supports cases of the Method Enum')]
-    #[DataProvider('provideUnsupportedMethods')]
-    public function itCannotSupportUnsupportedMethods(string $method): void
-    {
-        self::assertNull(Method::tryFrom($method));
-
-        $openAPIString = json_encode([
-            'openapi' => '3.0.0',
-            'info' => ['title' => '', 'version' => '1.0.0'],
-            'paths' => [
-                '/path' => [
-                    $method => [
-                        'operationId' => 'test-id',
-                        'responses' => [200 => ['description' => ' Successful Response']],
-                    ],
-                ],
-            ],
-        ]);
-
-        self::expectExceptionObject(CannotSupport::unsupportedMethod('/path', $method));
 
         (new Reader([OpenAPIVersion::Version_3_0]))
             ->readFromString($openAPIString, FileFormat::Json);
@@ -486,5 +491,167 @@ class ReaderTest extends TestCase
 
         (new Reader([OpenAPIVersion::Version_3_0]))
             ->readFromString($openAPIString, FileFormat::Json);
+    }
+
+    public static function provideConflictingParameters(): Generator
+    {
+        $openAPI = fn(array $path) => [
+            'openapi' => '3.0.0',
+            'info' => ['title' => 'test-api', 'version' => '1.0.0'],
+            'paths' => ['/path' => $path]
+        ];
+
+        $path = fn(array $parameters, array $operation) => [
+            'parameters' => $parameters,
+            'get' => $operation,
+        ];
+
+        $operation = fn(array $data) => [
+            ...$data,
+            'responses' => [200 => ['description' => ' Successful Response']]
+        ];
+
+        yield 'operation with two spaceDelimited exploding arrays' => [
+            json_encode(
+                $openAPI($path(
+                    [],
+                    $operation([
+                        'operationId' => 'test-op',
+                        'parameters' => [
+                            [
+                                'name' => 'param1',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'spaceDelimited',
+                                'schema' => ['type' => 'array'],
+                            ],
+                            [
+                                'name' => 'param2',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'spaceDelimited',
+                                'schema' => ['type' => 'array'],
+                            ]
+                        ],
+                    ])
+                ))
+            ),
+            CannotSupport::conflictingParameterStyles(
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param1(query)"]',
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
+            )
+        ];
+
+        yield 'operation with spaceDelimited and pipeDelimited exploding arrays' => [
+            json_encode(
+                $openAPI($path(
+                    [],
+                    $operation([
+                        'operationId' => 'test-op',
+                        'parameters' => [
+                            [
+                                'name' => 'param1',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'spaceDelimited',
+                                'schema' => ['type' => 'array'],
+                            ],
+                            [
+                                'name' => 'param2',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'pipeDelimited',
+                                'schema' => ['type' => 'array'],
+                            ]
+                        ],
+                    ])
+                ))
+            ),
+            CannotSupport::conflictingParameterStyles(
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param1(query)"]',
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
+            )
+        ];
+
+        yield 'spaceDelimited exploding in path, pipeDelimited exploding in query' => [
+            json_encode(
+                $openAPI($path(
+                    [
+                        [
+                            'name' => 'param1',
+                            'in' => 'query',
+                            'explode' => true,
+                            'style' => 'spaceDelimited',
+                            'schema' => ['type' => 'array'],
+                        ],
+                    ],
+                    $operation([
+                        'operationId' => 'test-op',
+                        'parameters' => [
+                            [
+                                'name' => 'param2',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'pipeDelimited',
+                                'schema' => ['type' => 'array'],
+                            ]
+                        ],
+                    ])
+                ))
+            ),
+            CannotSupport::conflictingParameterStyles(
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
+                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
+            )
+        ];
+
+        yield 'form exploding object in path, pipeDelimited exploding in query' => [
+            json_encode(
+                $openAPI($path(
+                    [
+                        [
+                            'name' => 'param1',
+                            'in' => 'query',
+                            'explode' => true,
+                            'style' => 'form',
+                            'schema' => ['type' => 'object'],
+                        ],
+                    ],
+                    $operation([
+                        'operationId' => 'test-op',
+                        'parameters' => [
+                            [
+                                'name' => 'param2',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'pipeDelimited',
+                                'schema' => ['type' => 'array'],
+                            ]
+                        ],
+                    ])
+                ))
+            ),
+            CannotSupport::conflictingParameterStyles(
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
+                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
+            )
+        ];
+    }
+
+    #[Test, DataProvider('provideConflictingParameters')]
+    #[TestDox('It cannot support multiple parameters with the potential to conflict.')]
+    public function itCannotSupportAmbiguousResolution(
+        string $openAPIString,
+        CannotSupport $expected
+    ): void {
+        $filePath = vfsStream::setup()->url() . '/openapi.json';
+        file_put_contents($filePath, $openAPIString);
+
+        self::expectExceptionObject($expected);
+
+        (new Reader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+
+
     }
 }

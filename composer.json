@@ -9,6 +9,7 @@
   },
   "autoload-dev": {
     "psr-4": {
+      "Membrane\\OpenAPIReader\\Tests\\Fixtures\\Helper\\": "tests/fixtures/Helper",
       "Membrane\\OpenAPIReader\\Tests\\Fixtures\\": "tests/fixtures/",
       "Membrane\\OpenAPIReader\\Tests\\": "tests/"
     }
