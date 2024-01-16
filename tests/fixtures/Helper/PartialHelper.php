@@ -17,7 +17,7 @@ final class PartialHelper
         ?string $openapi = '3.0.0',
         ?string $title = 'Test API',
         ?string $version = '1.0.0',
-        array $paths = [],
+        ?array $paths = [],
     ): OpenAPI {
         return new OpenAPI(
             $openapi,

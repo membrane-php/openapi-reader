@@ -30,6 +30,10 @@ final class OpenAPI extends Validated
             throw InvalidOpenAPI::missingOpenAPIVersion($this->getIdentifier());
         }
 
+        if (!isset($openAPI->paths)) {
+            throw InvalidOpenAPI::missingPaths($this->getIdentifier());
+        }
+
         if (empty($openAPI->paths)) {
             $this->addWarning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
         }

@@ -16,7 +16,7 @@ final class OpenAPI
         public ?string $openAPI = null,
         public ?string $title = null,
         public ?string $version = null,
-        public array $paths = [],
+        public ?array $paths = null,
     ) {
     }
 }

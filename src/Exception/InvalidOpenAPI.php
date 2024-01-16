@@ -33,6 +33,16 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function missingPaths(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            An OpenAPI Object MUST contain an "paths" field.
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function forwardSlashMustPrecedePath(
         Identifier $identifier,
         string $path

@@ -92,6 +92,11 @@ class OpenAPITest extends TestCase
             ['version' => null]
         );
 
+        yield 'no "paths" field' => $case(
+            InvalidOpenAPI::missingPaths($identifier),
+            ['paths' => null]
+        );
+
         yield 'path without an endpoint' => $case(
             InvalidOpenAPI::pathMissingEndPoint($identifier),
             ['paths' => [PartialHelper::createPathItem(path: null)]]
