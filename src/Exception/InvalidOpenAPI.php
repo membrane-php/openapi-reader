@@ -12,7 +12,6 @@ use RuntimeException;
  */
 final class InvalidOpenAPI extends RuntimeException
 {
-
     public static function missingInfo(): self
     {
         $message = <<<TEXT
@@ -115,21 +114,11 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function parameterIncompatibleStyle(Identifier $identifier)
+    public static function parameterIncompatibleStyle(Identifier $identifier): self
     {
         $message = <<<TEXT
             $identifier
             This Parameter has an incompatible combination of "style" and "in". 
-            TEXT;
-
-        return new self ($message);
-    }
-
-    public static function malformedUrl(Identifier $identifier, string $url): self
-    {
-        $message = <<<TEXT
-            $identifier 
-            The templated endpoint for this path is malformed: $url.
             TEXT;
 
         return new self($message);
@@ -206,7 +195,7 @@ final class InvalidOpenAPI extends RuntimeException
             "content" array must contain mediaType => Media Type Object pairs
             TEXT;
 
-        return new self ($message);
+        return new self($message);
     }
 
     public static function failedCebeValidation(string ...$errors): self
@@ -222,8 +211,6 @@ final class InvalidOpenAPI extends RuntimeException
             'complex schemas MUST have atleast one sub-schema
             TEXT;
 
-        return new self ($message);
+        return new self($message);
     }
-
-
 }

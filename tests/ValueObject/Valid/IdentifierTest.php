@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\Tests\ValueObject;
+namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid;
 
 use Generator;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;

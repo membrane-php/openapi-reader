@@ -16,7 +16,7 @@ final class OpenAPI extends Validated
      * The PathItem's relative endpoint key mapped to the PathItem
      * @var array<string,PathItem>
      */
-    private readonly array $paths;
+    public readonly array $paths;
 
     public function __construct(Partial\OpenAPI $openAPI)
     {
@@ -123,9 +123,7 @@ final class OpenAPI extends Validated
     {
         $pattern = preg_replace('#{[^/]+}#', '{([^/]+)}', $path);
 
-        if (!is_string($pattern)) {
-            throw InvalidOpenAPI::malformedUrl($this->getIdentifier(), $path);
-        }
+        assert(is_string($pattern));
 
         return $pattern;
     }

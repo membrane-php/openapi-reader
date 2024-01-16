@@ -16,6 +16,11 @@ final class Warnings
         $this->warnings = $warnings;
     }
 
+    public function getIdentifier(): Identifier
+    {
+        return $this->identifier;
+    }
+
     public function add(string $message, string $code): void
     {
         $this->warnings[] = new Warning($message, $code);

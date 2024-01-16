@@ -19,6 +19,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -43,6 +44,22 @@ class OpenAPITest extends TestCase
         self::expectExceptionObject($expected);
 
         new OpenAPI($partialOpenAPI);
+    }
+
+    #[Test]
+    #[TestDox('no "paths" is technically valid, but it does not leave much for Membrane to validate.')]
+    public function itWarnsAgainstEmptyPaths(): void
+    {
+        $expected = new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
+        $title = 'My API';
+        $version = '1.2.1';
+        $sut = new OpenAPI(PartialHelper::createOpenAPI(
+            title: $title,
+            version: $version,
+            paths: [],
+        ));
+
+        self::assertEquals($expected, $sut->getWarnings()->all()[0]);
     }
 
     public static function providePartialOpenAPIs(): Generator

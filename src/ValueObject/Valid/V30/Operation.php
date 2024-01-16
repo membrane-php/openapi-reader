@@ -29,7 +29,7 @@ final class Operation extends Validated
     ) {
         $this->operationId = $operation->operationId ??
             throw CannotSupport::missingOperationId(
-                $parentIdentifier->fromEnd(0),
+                $parentIdentifier->fromEnd(0) ?? '',
                 $operation->method,
             );
 

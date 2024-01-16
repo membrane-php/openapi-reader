@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\Tests\ValueObject;
+namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid;
 
 use Generator;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -19,6 +19,15 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Identifier::class)]
 class WarningsTest extends TestCase
 {
+    #[Test]
+    public function itGetsIdentifier(): void
+    {
+        $expected = new Identifier('test');
+        $sut = new Warnings($expected);
+
+        self::assertEquals($expected, $sut->getIdentifier());
+    }
+
     #[Test, DataProvider('provideWarnings')]
     public function itCanGetAllWarnings(Warning ...$warnings): void
     {
@@ -39,7 +48,6 @@ class WarningsTest extends TestCase
 
         self::assertEquals($expected, $sut->all());
     }
-
 
     public static function provideWarnings(): Generator
     {

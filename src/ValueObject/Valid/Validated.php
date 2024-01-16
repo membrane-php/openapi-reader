@@ -9,20 +9,20 @@ abstract class Validated implements HasIdentifier, HasWarnings
     private Warnings $warnings;
 
     public function __construct(
-        private readonly Identifier $parentIdentifier,
+        private readonly Identifier $identifier,
     ) {
     }
 
     public function getIdentifier(): Identifier
     {
-        return $this->parentIdentifier;
+        return $this->identifier;
     }
 
     protected function appendedIdentifier(
         string $primaryId,
         string $secondaryId = ''
     ): Identifier {
-        return $this->parentIdentifier->append($primaryId, $secondaryId);
+        return $this->identifier->append($primaryId, $secondaryId);
     }
 
 
@@ -34,7 +34,7 @@ abstract class Validated implements HasIdentifier, HasWarnings
     public function getWarnings(): Warnings
     {
         if (!isset($this->warnings)) {
-            $this->warnings = new Warnings($this->parentIdentifier);
+            $this->warnings = new Warnings($this->identifier);
         }
 
         return $this->warnings;

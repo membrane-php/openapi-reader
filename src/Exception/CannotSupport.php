@@ -52,7 +52,7 @@ final class CannotSupport extends RuntimeException
         return new self($message, self::MISSING_OPERATION_ID);
     }
 
-    public static function undeclaredType(Identifier $identifier)
+    public static function undeclaredType(Identifier $identifier): self
     {
         $message = <<<TEXT
             $identifier
