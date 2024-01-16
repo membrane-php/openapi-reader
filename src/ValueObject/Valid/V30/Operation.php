@@ -7,6 +7,7 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 use Membrane\OpenAPIReader\Exception\CannotSupport;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\In;
+use Membrane\OpenAPIReader\Method;
 use Membrane\OpenAPIReader\Style;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -25,15 +26,16 @@ final class Operation extends Validated
     public function __construct(
         Identifier $parentIdentifier,
         array $pathParameters,
+        Method $method,
         Partial\Operation $operation,
     ) {
         $this->operationId = $operation->operationId ??
             throw CannotSupport::missingOperationId(
                 $parentIdentifier->fromEnd(0) ?? '',
-                $operation->method,
+                $method->value,
             );
 
-        parent::__construct($parentIdentifier->append("$this->operationId($operation->method)"));
+        parent::__construct($parentIdentifier->append("$this->operationId($method->value)"));
 
         $this->parameters = $this->mergeParameters(
             $pathParameters,

@@ -10,7 +10,6 @@ final class Operation
      * @param Parameter[] $parameters
      */
     public function __construct(
-        public string $method = '',
         public ?string $operationId = null,
         public array $parameters = [],
     ) {

@@ -30,12 +30,26 @@ final class PartialHelper
     public static function createPathItem(
         ?string $path = '/path',
         array $parameters = [],
-        array $operations = [],
+         ?Operation $get = null,
+         ?Operation $put = null,
+         ?Operation $post = null,
+         ?Operation $delete = null,
+         ?Operation $options = null,
+         ?Operation $head = null,
+         ?Operation $patch = null,
+         ?Operation $trace = null,
     ): PathItem {
         return new PathItem(
             $path,
             $parameters,
-            $operations
+            $get,
+            $put,
+            $post,
+            $delete,
+            $options,
+            $head,
+            $patch,
+            $trace,
         );
     }
 
@@ -61,12 +75,10 @@ final class PartialHelper
     }
 
     public static function createOperation(
-        string $method = 'get',
         ?string $operationId = 'test-id',
         array $parameters = []
     ): Operation {
         return new Operation(
-            $method,
             $operationId,
             $parameters
         );

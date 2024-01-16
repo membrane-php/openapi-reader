@@ -96,39 +96,15 @@ class PathItemTest extends TestCase
         );
     }
 
-    #[Test]
-    #[TestDox('It invalidates any methods that are not specified by OpenAPI')]
-    public function itInvalidatesUnrecognisedMethods(): void
-    {
-        $path = '/path';
-        $identifier = new Identifier($path);
-        $method = 'upload';
-
-        $partialPathItem = PartialHelper::createPathItem(
-            path: $path,
-            operations: [PartialHelper::createOperation(method: $method)]
-        );
-
-        self::expectExceptionObject(
-            InvalidOpenAPI::unrecognisedMethod($identifier, $method)
-        );
-
-        new PathItem($identifier, $partialPathItem);
-    }
-
     #[Test, DataProvider('provideRedundantMethods')]
     #[TestDox('it warns that options, head and trace are redundant methods for an OpenAPI')]
     public function itWarnsAgainstRedundantMethods(string $method): void
     {
-        $path = '/path';
-        $identifier = new Identifier($path);
+        $operations = [$method => PartialHelper::createOperation()];
 
-        $partialPathItem = PartialHelper::createPathItem(
-            path: $path,
-            operations: [PartialHelper::createOperation(method: $method)]
-        );
+        $partialPathItem = PartialHelper::createPathItem(...$operations);
 
-        $sut = new PathItem($identifier, $partialPathItem);
+        $sut = new PathItem(new Identifier('test'), $partialPathItem);
 
         self::assertEquals(
             new Warning(
@@ -151,8 +127,10 @@ class PathItemTest extends TestCase
         array $operations,
     ): void {
         $sut = new PathItem(
-            new Identifier('test'),
-            PartialHelper::createPathItem(operations: $operations)
+            $identifier,
+            PartialHelper::createPathItem(
+                ...$operations
+            )
         );
 
         self::assertEquals($expected, $sut->getOperations());
@@ -207,13 +185,13 @@ class PathItemTest extends TestCase
         yield 'no operations' => $case([], []);
 
         $partialOperation = fn($method) => PartialHelper::createOperation(
-            method: $method,
             operationId: "$method-id"
         );
 
         $validOperation = fn($method) => new Operation(
             $identifier,
             [],
+            Method::from($method),
             $partialOperation($method),
         );
 
@@ -221,7 +199,7 @@ class PathItemTest extends TestCase
             [
                 'get' => $validOperation('get')
             ],
-            [$partialOperation('get')]
+            ['get' => $partialOperation('get')]
         );
 
         yield 'every operation' => $case(
@@ -236,14 +214,14 @@ class PathItemTest extends TestCase
                 'trace' => $validOperation('trace'),
             ],
             [
-                $partialOperation('get'),
-                $partialOperation('put'),
-                $partialOperation('post'),
-                $partialOperation('delete'),
-                $partialOperation('options'),
-                $partialOperation('head'),
-                $partialOperation('patch'),
-                $partialOperation('trace'),
+                'get' => $partialOperation('get'),
+                'put' => $partialOperation('put'),
+                'post' => $partialOperation('post'),
+                'delete' => $partialOperation('delete'),
+                'options' => $partialOperation('options'),
+                'head' => $partialOperation('head'),
+                'patch' => $partialOperation('patch'),
+                'trace' => $partialOperation('trace'),
             ]
         );
     }

@@ -88,35 +88,32 @@ class FromCebeTest extends TestCase
                                 )
                             ),
                         ],
-                        operations: [
-                            PartialHelper::createOperation(
-                                operationId: 'test-id',
-                                method: 'get',
-                                parameters: [
-                                    PartialHelper::createParameter(
-                                        name: 'pet',
-                                        in: 'header',
-                                        required: true,
-                                        schema: null,
-                                        content: [
-                                            PartialHelper::createMediaType(
-                                                mediaType: 'application/json',
-                                                schema: PartialHelper::createSchema(
-                                                    allOf: [
-                                                        PartialHelper::createSchema(
-                                                            type: 'integer'
-                                                        ),
-                                                        PartialHelper::createSchema(
-                                                            type: 'number'
-                                                        )
-                                                    ]
-                                                )
+                        get: PartialHelper::createOperation(
+                            operationId: 'test-id',
+                            parameters: [
+                                PartialHelper::createParameter(
+                                    name: 'pet',
+                                    in: 'header',
+                                    required: true,
+                                    schema: null,
+                                    content: [
+                                        PartialHelper::createMediaType(
+                                            mediaType: 'application/json',
+                                            schema: PartialHelper::createSchema(
+                                                allOf: [
+                                                    PartialHelper::createSchema(
+                                                        type: 'integer'
+                                                    ),
+                                                    PartialHelper::createSchema(
+                                                        type: 'number'
+                                                    )
+                                                ]
                                             )
-                                        ]
-                                    )
-                                ]
-                            )
-                        ]
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
                     )
                 ]
             )),

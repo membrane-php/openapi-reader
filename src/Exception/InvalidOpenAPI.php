@@ -146,17 +146,6 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function unrecognisedMethod(Identifier $identifier, string $method): self
-    {
-        return new self(
-            <<<TEXT
-            $identifier
-            Path Item Object contains an operation mapped to by "$method".
-            This is an unrecognised HTTP method.
-            TEXT
-        );
-    }
-
     public static function duplicateOperationIds(
         string $operationId,
         string $firstPath,

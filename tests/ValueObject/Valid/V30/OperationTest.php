@@ -7,6 +7,7 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 use Generator;
 use Membrane\OpenAPIReader\Exception\CannotSupport;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\Method;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -40,7 +41,7 @@ class OperationTest extends TestCase
         self::expectException(CannotSupport::class);
         self::expectExceptionCode(CannotSupport::MISSING_OPERATION_ID);
 
-        new Operation(new Identifier(''), [], $partialOperation);
+        new Operation(new Identifier(''), [], Method::GET, $partialOperation);
     }
 
     /**
@@ -52,9 +53,10 @@ class OperationTest extends TestCase
         Identifier $parentIdentifier,
         array $expected,
         array $pathParameters,
+        Method $method,
         Partial\Operation $partialOperation
     ): void {
-        $sut = new Operation($parentIdentifier, $pathParameters, $partialOperation);
+        $sut = new Operation($parentIdentifier, $pathParameters, $method, $partialOperation);
 
         self::assertEquals($expected, $sut->parameters);
     }
@@ -65,8 +67,8 @@ class OperationTest extends TestCase
         $parentIdentifier = new Identifier('test-path');
 
         $operationId = 'test-id';
-        $method = 'get';
-        $identifier = $parentIdentifier->append($operationId, $method);
+        $method = Method::GET;
+        $identifier = $parentIdentifier->append($operationId, $method->value);
 
         $parameterNames = ['param1', 'param2'];
         $parameterIdentifiers = array_map(
@@ -75,7 +77,6 @@ class OperationTest extends TestCase
         );
 
         $partialOperation = PartialHelper::createOperation(
-            method: $method,
             operationId: $operationId,
             parameters: [
                 PartialHelper::createParameter(
@@ -97,30 +98,33 @@ class OperationTest extends TestCase
 
         self::expectExceptionObject(CannotSupport::conflictingParameterStyles(...$parameterIdentifiers));
 
-        new Operation($parentIdentifier, [], $partialOperation);
+        new Operation($parentIdentifier, [], $method, $partialOperation);
     }
 
     #[Test, DataProvider('provideOperationsToValidate')]
     public function itValidatesOperations(
         InvalidOpenAPI $expected,
         Identifier $parentIdentifier,
+        Method $method,
         Partial\Operation $partialOperation,
     ): void {
         self::expectExceptionObject($expected);
 
-        new Operation($parentIdentifier, [], $partialOperation);
+        new Operation($parentIdentifier, [], $method, $partialOperation);
     }
 
     public static function provideParameters(): Generator
     {
         $parentIdentifier = new Identifier('/path');
         $operationId = 'test-operation';
-        $identifier = $parentIdentifier->append("$operationId(get)");
+        $method = Method::GET;
+        $identifier = $parentIdentifier->append("$operationId($method->value)");
 
         $case = fn($expected, $pathParameters, $operationParameters) => [
             $parentIdentifier,
             $expected,
             array_map(fn($p) => new Parameter($parentIdentifier, $p), $pathParameters),
+            $method,
             PartialHelper::createOperation(
                 operationId: $operationId,
                 parameters: $operationParameters
@@ -174,14 +178,15 @@ class OperationTest extends TestCase
     {
         $parentIdentifier = new Identifier('test');
         $operationId = 'test-id';
-        $method = 'get';
-        $identifier = $parentIdentifier->append($operationId, $method);
+        $method = Method::GET;
+        $identifier = $parentIdentifier->append($operationId, $method->value);
 
         $case = fn($expected, $data) => [
             $expected,
             $parentIdentifier,
+            $method,
             PartialHelper::createOperation(...array_merge(
-                ['operationId' => $operationId, 'method' => $method],
+                ['operationId' => $operationId],
                 $data
             ))
         ];

@@ -43,9 +43,16 @@ final class FromCebe
 
         foreach ($paths ?? [] as $path => $pathItem) {
             $result[] = new PathItem(
-                $path,
-                self::createParameters($pathItem->parameters),
-                self::createOperations($pathItem->getOperations()),
+                path: $path,
+                parameters: self::createParameters($pathItem->parameters),
+                get: self::createOperation($pathItem->get),
+                put: self::createOperation($pathItem->put),
+                post: self::createOperation($pathItem->post),
+                delete: self::createOperation($pathItem->delete),
+                options: self::createOperation($pathItem->options),
+                head: self::createOperation($pathItem->head),
+                patch: self::createOperation($pathItem->patch),
+                trace: self::createOperation($pathItem->trace),
             );
         }
 
@@ -121,22 +128,16 @@ final class FromCebe
         return $result;
     }
 
-    /**
-     * @param array<string,Cebe\Operation> $operations
-     * @return Operation[]
-     */
-    private static function createOperations(array $operations): array
-    {
-        $result = [];
-
-        foreach ($operations as $method => $operation) {
-            $result[] = new Operation(
-                $method,
-                $operation->operationId,
-                self::createParameters($operation->parameters)
-            );
+    private static function createOperation(
+        ?Cebe\Operation $operation
+    ): ?Operation {
+        if (is_null($operation)) {
+            return null;
         }
 
-        return $result;
+        return new Operation(
+            $operation->operationId,
+            self::createParameters($operation->parameters)
+        );
     }
 }

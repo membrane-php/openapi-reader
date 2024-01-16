@@ -20,10 +20,10 @@ final class Schema extends Validated
     public readonly ?array $oneOf;
 
     public function __construct(
-        Identifier $parentIdentifier,
+        Identifier $identifier,
         Partial\Schema $schema
     ) {
-        parent::__construct($parentIdentifier);
+        parent::__construct($identifier);
 
         $this->type = $schema->type ?? null;
 

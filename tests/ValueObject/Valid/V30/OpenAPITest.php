@@ -131,10 +131,8 @@ class OpenAPITest extends TestCase
                 'paths' => [
                     PartialHelper::createPathItem(
                         path: '/path',
-                        operations: [
-                            PartialHelper::createOperation(operationId: 'duplicate-id', method: 'get'),
-                            PartialHelper::createOperation(operationId: 'duplicate-id', method: 'post')
-                        ],
+                        get: PartialHelper::createOperation(operationId: 'duplicate-id'),
+                        post:    PartialHelper::createOperation(operationId: 'duplicate-id'),
                     )
                 ]
             ]
@@ -146,15 +144,12 @@ class OpenAPITest extends TestCase
                 'paths' => [
                     PartialHelper::createPathItem(
                         path: '/first',
-                        operations: [
-                            PartialHelper::createOperation(operationId: 'duplicate-id', method: 'get'),
-                        ],
+                        get: PartialHelper::createOperation(operationId: 'duplicate-id')
+
                     ),
                     PartialHelper::createPathItem(
                         path: '/second',
-                        operations: [
-                            PartialHelper::createOperation(operationId: 'duplicate-id', method: 'get'),
-                        ],
+                        get: PartialHelper::createOperation(operationId: 'duplicate-id'),
                     ),
                 ]
             ]

@@ -13,10 +13,10 @@ final class MediaType extends Validated
     public readonly ?Schema $schema;
 
     public function __construct(
-        Identifier $parentIdentifier,
+        Identifier $identifier,
         Partial\MediaType $mediaType
     ) {
-         parent::__construct($parentIdentifier);
+         parent::__construct($identifier);
 
         $this->schema = isset($mediaType->schema) ?
             new Schema($this->getIdentifier()->append('schema'), $mediaType->schema) :

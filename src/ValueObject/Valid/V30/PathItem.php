@@ -16,11 +16,6 @@ final class PathItem extends Validated
     /** @var Parameter[] */
     public readonly array $parameters;
 
-    /**
-     * Operation "method" keys mapped to Operation values
-     * @var array<string,Operation>
-     */
-    private readonly array $operations;
     public readonly ?Operation $get;
     public readonly ?Operation $put;
     public readonly ?Operation $post;
@@ -31,22 +26,23 @@ final class PathItem extends Validated
     public readonly ?Operation $trace;
 
     public function __construct(
-        Identifier $parentIdentifier,
+        Identifier $identifier,
         Partial\PathItem $pathItem,
     ) {
-        parent::__construct($parentIdentifier);
+        parent::__construct($identifier);
 
         $this->parameters = $this->validateParameters($pathItem->parameters);
 
-        $this->operations = $this->validateOperations($pathItem->operations);
-        $this->get = $this->operations[Method::GET->value] ?? null;
-        $this->put = $this->operations[Method::PUT->value] ?? null;
-        $this->post = $this->operations[Method::POST->value] ?? null;
-        $this->delete = $this->operations[Method::DELETE->value] ?? null;
-        $this->options = $this->operations[Method::OPTIONS->value] ?? null;
-        $this->head = $this->operations[Method::HEAD->value] ?? null;
-        $this->patch = $this->operations[Method::PATCH->value] ?? null;
-        $this->trace = $this->operations[Method::TRACE->value] ?? null;
+        $this->get = $this->validateOperation(Method::GET, $pathItem->get);
+        $this->put = $this->validateOperation(Method::PUT, $pathItem->put);
+        $this->post = $this->validateOperation(Method::POST, $pathItem->post);
+        $this->delete = $this->validateOperation(Method::DELETE, $pathItem->delete);
+        $this->options = $this->validateOperation(Method::OPTIONS, $pathItem->options);
+        $this->head = $this->validateOperation(Method::HEAD, $pathItem->head);
+        $this->patch = $this->validateOperation(Method::PATCH, $pathItem->patch);
+        $this->trace = $this->validateOperation(Method::TRACE, $pathItem->trace);
+
+        $this->checkOperations($this->getOperations());
     }
 
     /**
@@ -55,7 +51,19 @@ final class PathItem extends Validated
      */
     public function getOperations(): array
     {
-        return $this->operations;
+        return array_filter(
+            [
+                Method::GET->value => $this->get,
+                Method::PUT->value => $this->put,
+                Method::POST->value => $this->post,
+                Method::DELETE->value => $this->delete,
+                Method::OPTIONS->value => $this->options,
+                Method::HEAD->value => $this->head,
+                Method::PATCH->value => $this->patch,
+                Method::TRACE->value => $this->trace,
+            ],
+            fn($o) => !is_null($o)
+        );
     }
 
     /**
@@ -97,41 +105,39 @@ final class PathItem extends Validated
         return $result;
     }
 
-    /**
-     * @param Partial\Operation[] $partialOperations
-     * @return array<string,Operation>
-     */
-    private function validateOperations(array $partialOperations): array
-    {
-        $result = [];
+    private function validateOperation(
+        Method $method,
+        ?Partial\Operation $operation
+    ): ?Operation {
+        if (is_null($operation)) {
+            return null;
+        }
 
-        if (empty($partialOperations)) {
+        return new Operation(
+            $this->getIdentifier(),
+            $this->parameters,
+            $method,
+            $operation
+        );
+    }
+
+    /**
+     * Operation "method" keys mapped to Operation values
+     * @param array<string,Operation> $operations
+     */
+    private function checkOperations(array $operations): void
+    {
+        if (empty($operations)) {
             $this->addWarning('No Operations on Path', Warning::EMPTY_PATH);
         }
 
-        foreach ($partialOperations as $partialOperation) {
-            $method = Method::tryFrom($partialOperation->method);
-            if ($method === null) {
-                throw InvalidOpenAPI::unrecognisedMethod(
-                    $this->getIdentifier(),
-                    $partialOperation->method
-                );
-            }
-
-            if ($method->isRedundant()) {
+        foreach ([Method::OPTIONS, Method::HEAD, Method::TRACE] as $method) {
+            if (isset($operations[$method->value])) {
                 $this->addWarning(
                     "$method->value is redundant in an OpenAPI Specification.",
                     Warning::REDUNDANT_METHOD,
                 );
             }
-
-            $result[$method->value] = new Operation(
-                $this->getIdentifier(),
-                $this->parameters,
-                $partialOperation
-            );
         }
-
-        return $result;
     }
 }

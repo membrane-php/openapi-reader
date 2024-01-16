@@ -34,14 +34,14 @@ final class OpenAPI extends Validated
             $this->addWarning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
         }
 
-        $this->paths = $this->getPaths($openAPI->paths);
+        $this->paths = $this->validatePaths($openAPI->paths);
     }
 
     /**
      * @param Partial\PathItem[] $pathItems
      * @return array<string,PathItem>
      */
-    private function getPaths(array $pathItems): array
+    private function validatePaths(array $pathItems): array
     {
         $result = [];
         foreach ($pathItems as $pathItem) {
