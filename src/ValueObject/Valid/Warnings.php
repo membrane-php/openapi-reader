@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\ValueObject\Valid;
 
-final class Warnings
+final class Warnings implements HasIdentifier
 {
     /** @var Warning[] */
     private array $warnings;
@@ -30,5 +30,23 @@ final class Warnings
     public function all(): array
     {
         return $this->warnings;
+    }
+
+    public function hasWarnings(): bool
+    {
+        return !empty($this->warnings);
+    }
+
+    public function hasWarningCodes(string $code, string ...$codes): bool
+    {
+        $codes = [$code, ...$codes];
+
+        foreach ($this->warnings as $warning) {
+            if (in_array($warning->code, $codes)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

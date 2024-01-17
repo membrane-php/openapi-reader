@@ -29,15 +29,7 @@ class WarningsTest extends TestCase
     }
 
     #[Test, DataProvider('provideWarnings')]
-    public function itCanGetAllWarnings(Warning ...$warnings): void
-    {
-        $sut = new Warnings(new Identifier('test'), ...$warnings);
-
-        self::assertSame($warnings, $sut->all());
-    }
-
-    #[Test, DataProvider('provideWarnings')]
-    public function itCanAddAWarning(Warning ...$warnings): void
+    public function itAddsWarnings(Warning ...$warnings): void
     {
         $newWarning = new Warning('this should be added', 'add-warning');
         $expected = [...$warnings, $newWarning];
@@ -49,6 +41,36 @@ class WarningsTest extends TestCase
         self::assertEquals($expected, $sut->all());
     }
 
+    #[Test, DataProvider('provideWarnings')]
+    public function itChecksItHasWarnings(Warning ...$warnings): void
+    {
+        $sut = new Warnings(new Identifier('test'), ...$warnings);
+
+        self::assertSame(!empty($warnings), $sut->hasWarnings());
+    }
+
+    #[Test, DataProvider('provideCodesToCheck')]
+    public function itChecksItHasWarningCodes(
+        bool $expected,
+        array $codes,
+        array $warnings,
+    ): void {
+        $sut = new Warnings(new Identifier('test'), ...$warnings);
+
+        self::assertSame($expected, $sut->hasWarningCodes(...$codes));
+    }
+
+    #[Test, DataProvider('provideWarnings')]
+    public function itGetsAllWarnings(Warning ...$warnings): void
+    {
+        $sut = new Warnings(new Identifier('test'), ...$warnings);
+
+        self::assertSame($warnings, $sut->all());
+    }
+
+    /**
+     * @return Generator<string,Warning[]>
+     */
     public static function provideWarnings(): Generator
     {
         yield 'no warnings' => [];
@@ -58,5 +80,72 @@ class WarningsTest extends TestCase
             new Warning('watch out!', 'clock-in'),
             new Warning('duck!', 'quack'),
         ];
+    }
+
+
+    public static function provideCodesToCheck(): Generator
+    {
+        foreach (self::provideWarnings() as $case => $warnings) {
+            yield "$case, single, not contained, code" => [
+                false,
+                ['This code is most definitely not contained anywhere'],
+                $warnings
+            ];
+
+            yield "$case, multiple, not contained, codes" => [
+                false,
+                [
+                    'This code is most definitely not contained anywhere',
+                    'This code is almost certainly not contained anywhere',
+                    'This code is guaranteed not to be contained somewhere',
+                ],
+                $warnings
+            ];
+
+            if (!empty($warnings)) {
+                $codes = array_map(fn($w) => $w->code, $warnings);
+
+                yield "$case, single, contained, code" => [
+                    true,
+                    [$codes[0]],
+                    $warnings
+                ];
+
+                yield "$case, one contained code, duplicated three times" => [
+                    true,
+                    [$codes[0], $codes[0], $codes[0]],
+                    $warnings
+                ];
+
+                yield "$case, one contained code, one that is not" => [
+                    true,
+                    ['This code is certainly not contained', $codes[0]],
+                    $warnings
+                ];
+
+                if (count($warnings) > 1) {
+                    yield "$case, all contained codes" => [
+                        true,
+                        $codes,
+                        $warnings
+                    ];
+
+                    $mixedCodes = [];
+                    foreach ($codes as $code) {
+                        $mixedCodes[] = 'This code is certainly not contained';
+                        $mixedCodes[] = $code;
+                    }
+
+                    yield "$case, all contained codes, several that aren't" => [
+                        true,
+                        $mixedCodes,
+                        $warnings,
+                    ];
+                }
+
+
+            }
+
+        }
     }
 }
