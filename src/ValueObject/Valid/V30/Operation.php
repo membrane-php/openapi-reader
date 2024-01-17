@@ -12,6 +12,7 @@ use Membrane\OpenAPIReader\Style;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
 final class Operation extends Validated
 {
@@ -37,7 +38,7 @@ final class Operation extends Validated
 
         parent::__construct($parentIdentifier->append("$this->operationId($method->value)"));
 
-        $this->parameters = $this->mergeParameters(
+        $this->parameters = $this->validateParameters(
             $pathParameters,
             $operation->parameters
         );
@@ -55,56 +56,75 @@ final class Operation extends Validated
      * @param Partial\Parameter[] $operationParameters
      * @return Parameter[]
      */
-    private function mergeParameters(
+    private function validateParameters(
         array $pathParameters,
         array $operationParameters
     ): array {
-        $result = array_map(
-            fn($p) => new Parameter($this->getIdentifier(), $p),
-            $operationParameters
-        );
+        $result = $this->mergeParameters($operationParameters, $pathParameters);
 
-        foreach ($pathParameters as $pathParameter) {
-            if (!$this->isIdenticalParameterInList($pathParameter, $result)) {
-                $result[] = $pathParameter;
-            }
-        }
+        foreach ($result as $index => $parameter) {
+            foreach (array_slice($result, $index + 1) as $otherParameter) {
+                if ($this->areParametersSimilar($parameter, $otherParameter)) {
+                    $this->addWarning(
+                        <<<TEXT
+                        'This contains confusingly similar parameter names:
+                         $parameter->name
+                         $otherParameter->name
+                        TEXT,
+                        Warning::SIMILAR_NAMES
+                    );
 
-        foreach (array_values($result) as $index => $parameter) {
-            if ($this->isIdenticalParameterInList($parameter, array_slice(array_values($result), $index + 1))) {
-                throw InvalidOpenAPI::duplicateParameters(
-                    $this->getIdentifier(),
-                    $parameter->name,
-                    $parameter->in->value
-                );
+                    if ($this->areParametersIdentical($parameter, $otherParameter)) {
+                        throw InvalidOpenAPI::duplicateParameters(
+                            $this->getIdentifier(),
+                            $parameter->getIdentifier(),
+                            $otherParameter->getIdentifier(),
+                        );
+                    }
+                }
             }
         }
 
         return $result;
     }
 
-    /** @param Parameter[] $otherParameters */
-    private function isIdenticalParameterInList(
-        Parameter $parameter,
-        array $otherParameters
-    ): bool {
-        foreach ($otherParameters as $otherParameter) {
-            if (!$this->isParameterUnique($parameter, $otherParameter)) {
-                return true;
+    /**
+     * @param Partial\Parameter[] $operationParameters
+     * @param Parameter[] $pathParameters
+     * @return array<int,Parameter>
+     */
+    private function mergeParameters(array $operationParameters, array $pathParameters): array
+    {
+        $result = array_map(
+            fn($p) => new Parameter($this->getIdentifier(), $p),
+            $operationParameters
+        );
+
+        foreach ($pathParameters as $pathParameter) {
+            foreach ($result as $operationParameter) {
+                if ($this->areParametersIdentical($pathParameter, $operationParameter)) {
+                    break;
+                }
+                $result[] = $pathParameter;
             }
         }
-        return false;
+        return array_values($result);
     }
 
-    private function isParameterUnique(
+    private function areParametersIdentical(
         Parameter $parameter,
         Parameter $otherParameter
     ): bool {
-        return $parameter->name !== $otherParameter->name ||
-            $parameter->in !== $otherParameter->in;
+        return $parameter->name === $otherParameter->name &&
+            $parameter->in === $otherParameter->in;
     }
 
-
+    private function areParametersSimilar(
+        Parameter $parameter,
+        Parameter $otherParameter
+    ): bool {
+        return strcasecmp($parameter->name, $otherParameter->name) === 0;
+    }
 
     private function canParameterConflict(Parameter $parameter): bool
     {

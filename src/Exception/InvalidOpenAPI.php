@@ -63,16 +63,17 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function duplicateParameters(Identifier $identifier, string $name, string $in): self
-    {
+    public static function duplicateParameters(
+        Identifier $identifier,
+        Identifier $parameter,
+        Identifier $otherParameter
+    ): self {
         $message = <<<TEXT
             $identifier
-            This object contains duplicate parameters.
-            A unique parameter is defined by a combination of a name and location.
-            Multiple parameters have:
-                - name: $name
-                - in: $in
-            The list of parameters MUST NOT include duplicated parameters.
+            This MUST NOT contain duplicate Parameters.
+            Parameter uniqueness is determined by "name" and "in"
+            $parameter
+            $otherParameter
             TEXT;
 
         return new self($message);

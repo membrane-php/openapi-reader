@@ -66,13 +66,14 @@ class PathItemTest extends TestCase
         $name = 'param';
         $in = 'path';
         $param = PartialHelper::createParameter(name: $name, in: $in);
+        $paramIdentifier = $identifier->append($name, $in);
 
         $pathItem = PartialHelper::createPathItem(parameters: [$param, $param]);
 
         self::expectExceptionObject(InvalidOpenAPI::duplicateParameters(
             $identifier,
-            $name,
-            $in
+            $paramIdentifier,
+            $paramIdentifier,
         ));
 
         new PathItem($identifier, $pathItem);

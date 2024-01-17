@@ -15,6 +15,8 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -31,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Parameter::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Validated::class)]
+#[UsesClass(Warning::class)]
+#[UsesClass(Warnings::class)]
 class OperationTest extends TestCase
 {
     #[Test]
@@ -192,7 +196,11 @@ class OperationTest extends TestCase
         ];
 
         yield 'duplicate parameters' => $case(
-            InvalidOpenAPI::duplicateParameters($identifier, 'duplicate', 'path'),
+            InvalidOpenAPI::duplicateParameters(
+                $identifier,
+                $identifier->append('duplicate', 'path'),
+                $identifier->append('duplicate', 'path'),
+            ),
             [
                 'parameters' => array_pad([], 2, PartialHelper::createParameter(
                     name: 'duplicate',

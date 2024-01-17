@@ -79,14 +79,33 @@ final class PathItem extends Validated
 
         foreach (array_values($result) as $index => $parameter) {
             foreach (array_slice($result, $index + 1) as $otherParameter) {
+                if ($this->areParametersSimilar($parameter, $otherParameter)) {
+                    $this->addWarning(
+                        <<<TEXT
+                        'This contains confusingly similar parameter names:
+                         $parameter->name
+                         $otherParameter->name
+                        TEXT,
+                        Warning::SIMILAR_NAMES
+                    );
+
+                    if ($this->areParametersIdentical($parameter, $otherParameter)) {
+                        throw InvalidOpenAPI::duplicateParameters(
+                            $this->getIdentifier(),
+                            $parameter->getIdentifier(),
+                            $otherParameter->getIdentifier(),
+                        );
+                    }
+                }
+
                 if (
-                    strcmp($parameter->name, $otherParameter->name) === 0 &&
+                    $parameter->name === $otherParameter->name &&
                     $parameter->in === $otherParameter->in
                 ) {
                     throw InvalidOpenAPI::duplicateParameters(
                         $this->getIdentifier(),
-                        $parameter->name,
-                        $parameter->in->value
+                        $parameter->getIdentifier(),
+                        $otherParameter->getIdentifier(),
                     );
                 }
 
@@ -103,6 +122,21 @@ final class PathItem extends Validated
         }
 
         return $result;
+    }
+
+    private function areParametersIdentical(
+        Parameter $parameter,
+        Parameter $otherParameter
+    ): bool {
+        return $parameter->name === $otherParameter->name &&
+            $parameter->in === $otherParameter->in;
+    }
+
+    private function areParametersSimilar(
+        Parameter $parameter,
+        Parameter $otherParameter
+    ): bool {
+        return strcasecmp($parameter->name, $otherParameter->name) === 0;
     }
 
     private function validateOperation(
