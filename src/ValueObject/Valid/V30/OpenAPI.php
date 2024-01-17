@@ -13,6 +13,8 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class OpenAPI extends Validated
 {
     /**
+     * REQUIRED
+     * It may be empty due to ACL constraints
      * The PathItem's relative endpoint key mapped to the PathItem
      * @var array<string,PathItem>
      */

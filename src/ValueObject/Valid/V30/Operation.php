@@ -16,9 +16,17 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
 final class Operation extends Validated
 {
-    /** @var Parameter[] */
+    /**
+     * The list MUST NOT include duplicated parameters.
+     * A unique parameter is defined by a combination of a name and location.
+     * @var Parameter[]
+     */
     public readonly array $parameters;
 
+    /**
+     * Required by Membrane
+     * MUST be unique, value is case-sensitive.
+     */
     public readonly string $operationId;
 
     /**

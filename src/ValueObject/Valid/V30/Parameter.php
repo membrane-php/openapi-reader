@@ -13,19 +13,34 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 
 final class Parameter extends Validated
 {
+    /** REQUIRED */
     public readonly string $name;
 
+    /** REQUIRED */
     public readonly In $in;
+
+    /**
+     * If "in":"path"
+     * - "required" MUST be defined
+     * - "required" MUST be set to true
+     */
+    public readonly bool $required;
 
     public readonly Style $style;
     public readonly bool $explode;
 
     /**
-     * A Parameter MUST have one of the following, but not both.
+     * A Parameter MUST define a "schema" or "content" but not both
      */
     public readonly ?Schema $schema;
 
-    /** @var array<string,MediaType> */
+    /**
+     * A Parameter MUST have a "schema" or "content" but not both
+     * If "content" is defined:
+     * - It MUST contain only one Media Type.
+     * - That MediaType MUST define a schema.
+     * @var array<string,MediaType>
+     */
     public readonly array $content;
 
     public function __construct(Identifier $parentIdentifier, Partial\Parameter $parameter)
@@ -47,6 +62,8 @@ final class Parameter extends Validated
         if ($this->in === In::Path && $parameter->required !== true) {
             throw InvalidOpenAPI::parameterMissingRequired($this->getIdentifier());
         }
+        
+        $this->required = $parameter->required ?? false;
 
         if (!isset($parameter->style)) {
             $this->style = $this->defaultStyle($this->in);
