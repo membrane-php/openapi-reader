@@ -45,37 +45,28 @@ final class Parameter extends Validated
 
     public function __construct(Identifier $parentIdentifier, Partial\Parameter $parameter)
     {
-        if (!isset($parameter->name)) {
+        $this->name = $parameter->name ??
             throw InvalidOpenAPI::parameterMissingName($parentIdentifier);
-        }
-        $this->name = $parameter->name;
 
-        if (!isset($parameter->in)) {
-            throw InvalidOpenAPI::parameterMissingLocation($parentIdentifier);
-        }
+        $this->in = $this->validateIn(
+            $parentIdentifier,
+            $parameter->in,
+        );
 
-        parent::__construct($parentIdentifier->append($parameter->name, $parameter->in));
+        $identifier = $parentIdentifier->append($this->name, $this->in->value);
+        parent::__construct($identifier);
 
-        $this->in = In::tryFrom($parameter->in) ??
-            throw InvalidOpenAPI::parameterInvalidLocation($this->getIdentifier());
+        $this->required = $this->validateRequired(
+            $identifier,
+            $this->in,
+            $parameter->required
+        );
 
-        if ($this->in === In::Path && $parameter->required !== true) {
-            throw InvalidOpenAPI::parameterMissingRequired($this->getIdentifier());
-        }
-        
-        $this->required = $parameter->required ?? false;
-
-        if (!isset($parameter->style)) {
-            $this->style = $this->defaultStyle($this->in);
-        } elseif (Style::tryFrom($parameter->style) === null) {
-            throw InvalidOpenAPI::parameterInvalidStyle($this->getIdentifier());
-        } else {
-            $this->style = Style::from($parameter->style);
-        }
-
-        if (!$this->styleIsValid($this->in, $this->style)) {
-            throw InvalidOpenAPI::parameterIncompatibleStyle($this->getIdentifier());
-        }
+        $this->style = $this->validateStyle(
+            $identifier,
+            $this->in,
+            $parameter->style,
+        );
 
         $this->explode = $parameter->explode ?? $this->defaultExplode($this->style);
 
@@ -84,15 +75,15 @@ final class Parameter extends Validated
         }
 
         if (isset($parameter->schema)) {
+            $this->content = [];
             $this->schema = new Schema(
                 $this->appendedIdentifier('schema'),
                 $parameter->schema
             );
-            $this->content = [];
         } else {
             $this->schema = null;
 
-            $this->content = $this->getContent(
+            $this->content = $this->validateContent(
                 $this->getIdentifier(),
                 $parameter->name,
                 $parameter->content
@@ -120,6 +111,47 @@ final class Parameter extends Validated
         return array_key_first($this->content);
     }
 
+    private function validateIn(Identifier $identifier, ?string $in): In
+    {
+        if (is_null($in)) {
+            throw InvalidOpenAPI::parameterMissingLocation($identifier);
+        }
+
+        return In::tryFrom($in) ??
+            throw InvalidOpenAPI::parameterInvalidLocation($identifier);
+    }
+
+    private function validateRequired(
+        Identifier $identifier,
+        In $in,
+        ?bool $required
+    ): bool {
+        if ($in === In::Path && $required !== true) {
+            throw InvalidOpenAPI::parameterMissingRequired($identifier);
+        }
+
+        return $required ?? false;
+    }
+
+    private function validateStyle(
+        Identifier $identifier,
+        In $in,
+        ?string $style
+    ): Style {
+        if (is_null($style)) {
+            return $this->defaultStyle($in);
+        }
+
+        $style = Style::tryFrom($style) ??
+            throw InvalidOpenAPI::parameterInvalidStyle($identifier);
+
+        if (!$this->styleIsValidForLocation($in, $style)) {
+            throw InvalidOpenAPI::parameterIncompatibleStyle($identifier);
+        }
+
+        return $style;
+    }
+
     private function defaultStyle(In $in): Style
     {
         return match ($in) {
@@ -133,7 +165,7 @@ final class Parameter extends Validated
         return $style === Style::Form;
     }
 
-    private function styleIsValid(In $in, Style $style): bool
+    private function styleIsValidForLocation(In $in, Style $style): bool
     {
         return in_array(
             $style,
@@ -151,7 +183,7 @@ final class Parameter extends Validated
      * @param array<Partial\MediaType> $content
      * @return array<string,MediaType>
      */
-    private function getContent(
+    private function validateContent(
         Identifier $identifier,
         string $name,
         array $content,

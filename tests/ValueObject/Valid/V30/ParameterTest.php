@@ -93,7 +93,7 @@ class ParameterTest extends TestCase
         );
 
         yield 'invalid "in"' => $case(
-            InvalidOpenAPI::parameterInvalidLocation($parentIdentifier->append($name, 'Wonderland')),
+            InvalidOpenAPI::parameterInvalidLocation($parentIdentifier),
             ['in' => 'Wonderland']
         );
 
