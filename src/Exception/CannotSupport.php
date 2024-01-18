@@ -29,6 +29,12 @@ final class CannotSupport extends RuntimeException
         return new self($message, self::UNSUPPORTED_METHOD);
     }
 
+    public static function membraneReaderOnlySupportsv30(): self
+    {
+        $message = 'MembraneReader currently only supports Version 3.0.X';
+        return new self($message, self::UNSUPPORTED_VERSION);
+    }
+
     public static function noSupportedVersions(): self
     {
         $message = 'Reader cannot be constructed without any OpenAPI versions to support';

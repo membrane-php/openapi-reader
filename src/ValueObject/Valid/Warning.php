@@ -33,11 +33,16 @@ final class Warning
     public const NO_VALID_SERVERS = 'no-valid-servers';
 
     /**
-     * Path Item: "head"
-     * Path Item: "options" specifies what HTTP methods are available, this is what your OpenAPI already does.
-     * Path Item: "trace"
+     * Path Item:
+     * - "head", "options" and "trace" are not particularly valuable in an OpenAPI.
+     * - For example: "options" specifies what HTTP methods are available, this is what your OpenAPI already does.
      */
     public const REDUNDANT_METHOD = 'redundant-method';
+
+    /**
+     * Server: If the "url" does not name the variable, it cannot be provided.
+     */
+    public const REDUNDANT_VARIABLE = 'redundant-variable';
 
     /**
      * Path Item, Operation: "parameters" can have identical/similar names, but this could be quite confusing.

@@ -17,6 +17,13 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class Operation extends Validated
 {
     /**
+     * Optional, may be left empty.
+     * If empty or unspecified, the array will contain the Path level servers
+     * @var array<int,Server>
+     */
+    public readonly array $servers;
+
+    /**
      * The list MUST NOT include duplicated parameters.
      * A unique parameter is defined by a combination of a name and location.
      * @var Parameter[]
@@ -30,10 +37,12 @@ final class Operation extends Validated
     public readonly string $operationId;
 
     /**
+     * @param Server[] $pathServers
      * @param Parameter[] $pathParameters
      */
     public function __construct(
         Identifier $parentIdentifier,
+        array $pathServers,
         array $pathParameters,
         Method $method,
         Partial\Operation $operation,
@@ -46,6 +55,12 @@ final class Operation extends Validated
 
         parent::__construct($parentIdentifier->append("$this->operationId($method->value)"));
 
+        $this->servers = $this->validateServers(
+            $this->getIdentifier(),
+            $pathServers,
+            $operation->servers,
+        );
+
         $this->parameters = $this->validateParameters(
             $pathParameters,
             $operation->parameters
@@ -57,6 +72,25 @@ final class Operation extends Validated
                 ...array_map(fn($p) => (string)$p->getIdentifier(), $parametersThatCanConflict)
             );
         }
+    }
+
+    /**
+     * @param array<int,Server> $pathServers
+     * @param Partial\Server[] $operationServers
+     * @return array<int,Server>>
+     */
+    private function validateServers(
+        Identifier $identifier,
+        array $pathServers,
+        array $operationServers
+    ): array {
+        if (empty($operationServers)) {
+            return $pathServers;
+        }
+
+        return array_values(
+            array_map(fn($s) => new Server($identifier, $s), $operationServers)
+        );
     }
 
     /**

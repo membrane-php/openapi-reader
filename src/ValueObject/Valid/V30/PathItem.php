@@ -14,9 +14,16 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class PathItem extends Validated
 {
     /**
+     * Optional, may be left empty.
+     * If empty or unspecified, the array will contain the OpenAPI level servers
+     * @var array<int,Server>
+     */
+    public readonly array $servers;
+
+    /**
      * The list MUST NOT include duplicated parameters.
      * A unique parameter is defined by a combination of a name and location.
-     * @var Parameter[]
+     * @var array<int,Parameter>
      */
     public readonly array $parameters;
 
@@ -29,11 +36,21 @@ final class PathItem extends Validated
     public readonly ?Operation $patch;
     public readonly ?Operation $trace;
 
+    /**
+     * @param array<int,Server> $openAPIServers
+     */
     public function __construct(
         Identifier $identifier,
+        array $openAPIServers,
         Partial\PathItem $pathItem,
     ) {
         parent::__construct($identifier);
+
+        $this->servers = $this->validateServers(
+            $identifier,
+            $openAPIServers,
+            $pathItem->servers,
+        );
 
         $this->parameters = $this->validateParameters($pathItem->parameters);
 
@@ -67,6 +84,25 @@ final class PathItem extends Validated
                 Method::TRACE->value => $this->trace,
             ],
             fn($o) => !is_null($o)
+        );
+    }
+
+    /**
+     * @param array<int,Server> $openAPIServers
+     * @param Partial\Server[] $pathServers
+     * @return array<int,Server>>
+     */
+    private function validateServers(
+        Identifier $identifier,
+        array $openAPIServers,
+        array $pathServers
+    ): array {
+        if (empty($pathServers)) {
+            return $openAPIServers;
+        }
+
+        return array_values(
+            array_map(fn($s) => new Server($identifier, $s), $pathServers)
         );
     }
 
@@ -153,6 +189,7 @@ final class PathItem extends Validated
 
         return new Operation(
             $this->getIdentifier(),
+            $this->servers,
             $this->parameters,
             $method,
             $operation

@@ -10,6 +10,8 @@ use Membrane\OpenAPIReader\ValueObject\Partial\Operation;
 use Membrane\OpenAPIReader\ValueObject\Partial\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
+use Membrane\OpenAPIReader\ValueObject\Partial\Server;
+use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
 
 final class PartialHelper
 {
@@ -17,18 +19,43 @@ final class PartialHelper
         ?string $openapi = '3.0.0',
         ?string $title = 'Test API',
         ?string $version = '1.0.0',
+        array $servers = [],
         ?array $paths = [],
     ): OpenAPI {
         return new OpenAPI(
             $openapi,
             $title,
             $version,
+            $servers,
             $paths,
+        );
+    }
+
+    public static function createServer(
+        ?string $url = 'https://www.server.net',
+        ?array $variables = [],
+    ): Server{
+        return new Server(
+            $url,
+            $variables,
+        );
+    }
+
+    public static function createServerVariable(
+        ?string $name = 'default-name',
+        ?string $default = 'default-value',
+        ?array $enum = null,
+    ): ServerVariable {
+        return new ServerVariable(
+            $name,
+            $default,
+            $enum
         );
     }
 
     public static function createPathItem(
         ?string $path = '/path',
+        array $servers = [],
         array $parameters = [],
          ?Operation $get = null,
          ?Operation $put = null,
@@ -41,6 +68,7 @@ final class PartialHelper
     ): PathItem {
         return new PathItem(
             $path,
+            $servers,
             $parameters,
             $get,
             $put,
@@ -76,10 +104,12 @@ final class PartialHelper
 
     public static function createOperation(
         ?string $operationId = 'test-id',
+        array $servers = [],
         array $parameters = []
     ): Operation {
         return new Operation(
             $operationId,
+            $servers,
             $parameters
         );
     }

@@ -63,6 +63,88 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function serverMissingUrl(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            Every Server Object MUST specify a "url"
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverHasUndefinedVariables(
+        Identifier $identifier,
+        string ...$variables
+    ): self {
+        $variables = implode(
+            "\n",
+            array_map(fn($v) => sprintf('- "%s"', $v), $variables)
+        );
+        $message = <<<TEXT
+            $identifier
+            "url" names variable(s) that have not been defined by "variables":
+            $variables
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function urlNestedVariable(Identifier $identifier): self
+    {
+        return new self(
+            <<<TEXT
+            $identifier
+            Templated URL contains nested expressions.
+            RFC6570 - 3.2: Expressions cannot be nested.
+            TEXT
+        );
+    }
+
+    public static function urlLiteralClosingBrace(Identifier $identifier): self
+    {
+        return new self(
+            <<<TEXT
+            $identifier
+            URL contains a closing brace used outside of a variable.
+            RFC6750 - 2.1: Braces used outside of variables should be pct-encoded
+            TEXT
+        );
+    }
+
+    public static function urlUnclosedVariable(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            URL contains an unclosed variable.
+            RFC6750 - 3.2: A variable begins with an opening brace "{" and continues until the closing brace "}"
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverVariableMissingName(
+        Identifier $identifier
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            Every Server Variable Object MUST be mapped to by its name
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverVariableMissingDefault(
+        Identifier $identifier
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            Every Server Variable Object MUST specify a "default"
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function duplicateParameters(
         Identifier $identifier,
         Identifier $parameter,
