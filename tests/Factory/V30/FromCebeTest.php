@@ -17,6 +17,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\Server;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
@@ -29,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FromCebe::class)]
 #[UsesClass(OpenAPI::class)]
 #[UsesClass(Partial\OpenAPI::class)]
+#[UsesClass(Server::class)]
+#[UsesClass(Partial\Server::class)]
 #[UsesClass(PathItem::class)]
 #[UsesClass(Partial\PathItem::class)]
 #[UsesClass(Operation::class)]
@@ -75,6 +78,9 @@ class FromCebeTest extends TestCase
                 openapi: '3.0.0',
                 title: 'Test API',
                 version: '1.0.1',
+                servers: [
+                    PartialHelper::createServer(url: 'https://server.net'),
+                ],
                 paths: [
                     PartialHelper::createPathItem(
                         path: '/first',
@@ -89,7 +95,51 @@ class FromCebeTest extends TestCase
                             ),
                         ],
                         get: PartialHelper::createOperation(
-                            operationId: 'test-id',
+                            operationId: 'first-get',
+                            parameters: [
+                                PartialHelper::createParameter(
+                                    name: 'pet',
+                                    in: 'header',
+                                    required: true,
+                                    schema: null,
+                                    content: [
+                                        PartialHelper::createMediaType(
+                                            mediaType: 'application/json',
+                                            schema: PartialHelper::createSchema(
+                                                allOf: [
+                                                    PartialHelper::createSchema(
+                                                        type: 'integer'
+                                                    ),
+                                                    PartialHelper::createSchema(
+                                                        type: 'number'
+                                                    )
+                                                ]
+                                            )
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+                    ),
+                    PartialHelper::createPathItem(
+                        path: '/second',
+                        servers: [
+                            PartialHelper::createServer(
+                                url: 'https://second-server.co.uk'
+                            ),
+                        ],
+                        parameters: [
+                            PartialHelper::createParameter(
+                                name: 'limit',
+                                in: 'query',
+                                required: false,
+                                schema: PartialHelper::createSchema(
+                                    type: 'integer'
+                                )
+                            ),
+                        ],
+                        get: PartialHelper::createOperation(
+                            operationId: 'second-get',
                             parameters: [
                                 PartialHelper::createParameter(
                                     name: 'pet',
@@ -120,6 +170,9 @@ class FromCebeTest extends TestCase
             new Cebe\OpenApi([
                 'openapi' => '3.0.0',
                 'info' => ['title' => 'Test API', 'version' => '1.0.1'],
+                'servers' => [
+                    ['url' => 'https://server.net']
+                ],
                 'paths' => [
                     '/first' => [
                         'parameters' => [
@@ -131,7 +184,40 @@ class FromCebeTest extends TestCase
                             ]
                         ],
                         'get' => [
-                            'operationId' => 'test-id',
+                            'operationId' => 'first-get',
+                            'parameters' => [
+                                [
+                                    'name' => 'pet',
+                                    'in' => 'header',
+                                    'required' => true,
+                                    'content' => [
+                                        'application/json' => [
+                                            'schema' => [
+                                                'allOf' => [
+                                                    ['type' => 'integer'],
+                                                    ['type' => 'number']
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    '/second' => [
+                        'servers' => [
+                            ['url' => 'https://second-server.co.uk']
+                        ],
+                        'parameters' => [
+                            [
+                                'name' => 'limit',
+                                'in' => 'query',
+                                'required' => false,
+                                'schema' => ['type' => 'integer']
+                            ]
+                        ],
+                        'get' => [
+                            'operationId' => 'second-get',
                             'parameters' => [
                                 [
                                     'name' => 'pet',

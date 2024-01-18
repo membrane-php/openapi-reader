@@ -14,6 +14,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\Server;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
@@ -27,13 +28,15 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PathItem::class)]
 #[CoversClass(Partial\PathItem::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
-#[UsesClass(Identifier::class)]
+#[UsesClass(Server::class)]
+#[UsesClass(Partial\Server::class)]
 #[UsesClass(Operation::class)]
 #[UsesClass(Partial\Operation::class)]
 #[UsesClass(Parameter::class)]
 #[UsesClass(Partial\Parameter::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Partial\Schema::class)]
+#[UsesClass(Identifier::class)]
 #[UsesClass(Validated::class)]
 #[UsesClass(Warning::class)]
 #[UsesClass(Warnings::class)]
@@ -52,7 +55,7 @@ class PathItemTest extends TestCase
         $identifier = new Identifier('test-path-item');
         $expected = array_map(fn($p) => new Parameter($identifier, $p), $partialExpected);
 
-        $sut = new PathItem($identifier, $partialPathItem);
+        $sut = new PathItem($identifier, [], $partialPathItem);
 
         self::assertEquals($expected, $sut->parameters);
     }
@@ -76,7 +79,7 @@ class PathItemTest extends TestCase
             $paramIdentifier,
         ));
 
-        new PathItem($identifier, $pathItem);
+        new PathItem($identifier, [], $pathItem);
     }
 
     #[Test, DataProvider('provideSimilarNames')]
@@ -85,6 +88,7 @@ class PathItemTest extends TestCase
     {
         $sut = new PathItem(
             new Identifier('test-path-item'),
+            [],
             PartialHelper::createPathItem(parameters: [
                 PartialHelper::createParameter(name: $name1, in:'path'),
                 PartialHelper::createParameter(name: $name2, in:'query')
@@ -105,7 +109,7 @@ class PathItemTest extends TestCase
 
         $partialPathItem = PartialHelper::createPathItem(...$operations);
 
-        $sut = new PathItem(new Identifier('test'), $partialPathItem);
+        $sut = new PathItem(new Identifier('test'), [], $partialPathItem);
 
         self::assertEquals(
             new Warning(
@@ -129,12 +133,37 @@ class PathItemTest extends TestCase
     ): void {
         $sut = new PathItem(
             $identifier,
+            [],
             PartialHelper::createPathItem(
                 ...$operations
             )
         );
 
         self::assertEquals($expected, $sut->getOperations());
+    }
+
+    /**
+     * @param array<int,Partial\Server> $expected
+     * @param array<int,Server> $openapiServers
+     * @param Partial\Server[] $pathItemServers
+     */
+    #[Test, DataProvider('provideServers')]
+    #[TestDox('If a Path Item specifies any Servers, then it should override any OpenAPI servers')]
+    public function itOverridesOpenAPILevelServers(
+        array $expected,
+        Identifier $identifier,
+        array $openapiServers,
+        array $pathItemServers,
+    ): void {
+        $sut = new PathItem(
+            $identifier,
+            $openapiServers,
+            PartialHelper::createPathItem(
+                servers: $pathItemServers
+            )
+        );
+
+        self::assertEquals($expected, $sut->servers);
     }
 
     public static function providePartialPathItems(): Generator
@@ -192,6 +221,7 @@ class PathItemTest extends TestCase
         $validOperation = fn($method) => new Operation(
             $identifier,
             [],
+            [],
             Method::from($method),
             $partialOperation($method),
         );
@@ -225,5 +255,31 @@ class PathItemTest extends TestCase
                 'trace' => $partialOperation('trace'),
             ]
         );
+    }
+
+    public static function provideServers(): Generator
+    {
+        $parentIdentifier = new Identifier('test-api');
+        $identifier = $parentIdentifier->append('test-path');
+
+        $openAPIServers = [
+            new Server($parentIdentifier, PartialHelper::createServer(url: '/'))
+        ];
+
+        $case = fn($pathServers) => [
+            empty($pathServers) ? $openAPIServers :
+                array_map(fn($s) => new Server($identifier, $s), $pathServers),
+            $identifier,
+            $openAPIServers,
+            $pathServers
+        ];
+
+        yield 'no Path Item Servers' => $case([]);
+        yield 'one Path Item Server' => $case([PartialHelper::createServer()]);
+        yield 'three Path Item Servers' => $case([
+            PartialHelper::createServer(url: 'https://server-one.io'),
+            PartialHelper::createServer(url: 'https://server-two.co.uk'),
+            PartialHelper::createServer(url: 'https://server-three.net')
+        ]);
     }
 }

@@ -14,12 +14,14 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\Server;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -27,6 +29,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Partial\Operation::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
 #[CoversClass(CannotSupport::class)]
+#[UsesClass(Server::class)]
+#[UsesClass(Partial\Server::class)]
 #[UsesClass(Partial\Parameter::class)]
 #[UsesClass(Partial\Schema::class)]
 #[UsesClass(Identifier::class)]
@@ -45,7 +49,7 @@ class OperationTest extends TestCase
         self::expectException(CannotSupport::class);
         self::expectExceptionCode(CannotSupport::MISSING_OPERATION_ID);
 
-        new Operation(new Identifier(''), [], Method::GET, $partialOperation);
+        new Operation(new Identifier(''), [], [], Method::GET, $partialOperation);
     }
 
     /**
@@ -60,7 +64,7 @@ class OperationTest extends TestCase
         Method $method,
         Partial\Operation $partialOperation
     ): void {
-        $sut = new Operation($parentIdentifier, $pathParameters, $method, $partialOperation);
+        $sut = new Operation($parentIdentifier, [], $pathParameters, $method, $partialOperation);
 
         self::assertEquals($expected, $sut->parameters);
     }
@@ -102,7 +106,7 @@ class OperationTest extends TestCase
 
         self::expectExceptionObject(CannotSupport::conflictingParameterStyles(...$parameterIdentifiers));
 
-        new Operation($parentIdentifier, [], $method, $partialOperation);
+        new Operation($parentIdentifier, [], [], $method, $partialOperation);
     }
 
     #[Test, DataProvider('provideOperationsToValidate')]
@@ -114,7 +118,36 @@ class OperationTest extends TestCase
     ): void {
         self::expectExceptionObject($expected);
 
-        new Operation($parentIdentifier, [], $method, $partialOperation);
+        new Operation($parentIdentifier, [], [], $method, $partialOperation);
+    }
+
+    /**
+     * @param array<int,Partial\Server> $expected
+     * @param array<int,Server> $pathServers
+     * @param Partial\Server[] $operationServers
+     */
+    #[Test, DataProvider('provideServers')]
+    #[TestDox('If a Path Item specifies any Servers, it overrides OpenAPI servers')]
+    public function itOverridesPathLevelServers(
+        array $expected,
+        Identifier $parentIdentifier,
+        string $operationId,
+        Method $method,
+        array $pathServers,
+        array $operationServers,
+    ): void {
+        $sut = new Operation(
+            $parentIdentifier,
+            $pathServers,
+            [],
+            $method,
+            PartialHelper::createOperation(
+                operationId: $operationId,
+                servers: $operationServers,
+            )
+        );
+
+        self::assertEquals($expected, $sut->servers);
     }
 
     public static function provideParameters(): Generator
@@ -208,5 +241,35 @@ class OperationTest extends TestCase
                 ))
             ]
         );
+    }
+
+    public static function provideServers(): Generator
+    {
+        $parentIdentifier = new Identifier('test-api');
+        $operationId = 'test-operation';
+        $method = Method::GET;
+        $identifier = $parentIdentifier->append($operationId, $method->value);
+
+        $pathServers = [
+            new Server($parentIdentifier, PartialHelper::createServer(url: '/'))
+        ];
+
+        $case = fn($operationServers) => [
+            empty($operationServers) ? $pathServers :
+                array_map(fn($s) => new Server($identifier, $s), $operationServers),
+            $parentIdentifier,
+            $operationId,
+            $method,
+            $pathServers,
+            $operationServers
+        ];
+
+        yield 'no Path Item Servers' => $case([]);
+        yield 'one Path Item Server' => $case([PartialHelper::createServer()]);
+        yield 'three Path Item Servers' => $case([
+            PartialHelper::createServer(url: 'https://server-one.io'),
+            PartialHelper::createServer(url: 'https://server-two.co.uk'),
+            PartialHelper::createServer(url: 'https://server-three.net')
+        ]);
     }
 }

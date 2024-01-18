@@ -13,6 +13,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\PathItem;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\Server;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
@@ -26,6 +27,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(OpenAPI::class)]
 #[CoversClass(Partial\OpenAPI::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
+#[UsesClass(Server::class)]
+#[UsesClass(Partial\Server::class)]
 #[UsesClass(PathItem::class)]
 #[UsesClass(Partial\PathItem::class)]
 #[UsesClass(Operation::class)]
@@ -60,6 +63,25 @@ class OpenAPITest extends TestCase
         ));
 
         self::assertEquals($expected, $sut->getWarnings()->all()[0]);
+    }
+
+    #[Test]
+    public function itHasADefaultServer(): void
+    {
+        $title = 'My API';
+        $version = '1.2.1';
+        $sut = new OpenAPI(PartialHelper::createOpenAPI(
+            title: $title,
+            version: $version,
+            servers: [],
+        ));
+
+        $expected = [new Server(
+            $sut->getIdentifier(),
+            PartialHelper::createServer(url: '/')
+        )];
+
+        self::assertEquals($expected, $sut->servers);
     }
 
     public static function providePartialOpenAPIs(): Generator

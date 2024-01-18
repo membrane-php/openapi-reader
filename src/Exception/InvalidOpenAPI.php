@@ -63,6 +63,64 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function serverMissingUrl(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            Every Server Object MUST specify a "url"
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverHasUndefinedVariables(
+        Identifier $identifier,
+        string ...$variables
+    ): self {
+        $variables = implode(
+            "\n",
+            array_map(fn($v) => sprintf('- "%s"', $v), $variables)
+        );
+        $message = <<<TEXT
+            $identifier
+            "url" names variable(s) that have not been defined by "variables":
+            $variables
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverUnbalancedUrl(Identifier $identifier): self {
+        $message = <<<TEXT
+            $identifier
+            "url" names variable(s) that have not been defined by "variables":
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverVariableMissingName(
+        Identifier $identifier
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            Every Server Variable Object MUST be mapped to by its name
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function serverVariableMissingDefault(
+        Identifier $identifier
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            Every Server Variable Object MUST specify a "default"
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function duplicateParameters(
         Identifier $identifier,
         Identifier $parameter,

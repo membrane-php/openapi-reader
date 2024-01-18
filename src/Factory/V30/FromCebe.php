@@ -11,6 +11,8 @@ use Membrane\OpenAPIReader\ValueObject\Partial\Operation;
 use Membrane\OpenAPIReader\ValueObject\Partial\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
+use Membrane\OpenAPIReader\ValueObject\Partial\Server;
+use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 
 final class FromCebe
@@ -29,8 +31,46 @@ final class FromCebe
             $openApi->openapi,
             $openApi->info?->title, // @phpstan-ignore-line
             $openApi->info?->version, // @phpstan-ignore-line
+            self::createServers($openApi->servers),
             self::createPaths($openApi->paths)
         ));
+    }
+
+    /**
+     * @param Cebe\Server[] $servers
+     * @return Server[]
+     */
+    private static function createServers(array $servers): array
+    {
+        $result = [];
+
+        foreach ($servers as $server) {
+            $result[] = new Server(
+                $server->url,
+                self::createServerVariables($server->variables)
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param Cebe\ServerVariable[] $serverVariables
+     * @return ServerVariable[]
+     */
+    private static function createServerVariables(array $serverVariables): array
+    {
+        $result = [];
+
+        foreach ($serverVariables as $name => $serverVariable) {
+            $result[] = new ServerVariable(
+                $name,
+                $serverVariable->default,
+                $serverVariable->enum,
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -44,6 +84,7 @@ final class FromCebe
         foreach ($paths ?? [] as $path => $pathItem) {
             $result[] = new PathItem(
                 path: $path,
+                servers: self::createServers($pathItem->servers),
                 parameters: self::createParameters($pathItem->parameters),
                 get: self::createOperation($pathItem->get),
                 put: self::createOperation($pathItem->put),
@@ -136,8 +177,9 @@ final class FromCebe
         }
 
         return new Operation(
-            $operation->operationId,
-            self::createParameters($operation->parameters)
+            operationId: $operation->operationId,
+            servers: self::createServers($operation->servers),
+            parameters: self::createParameters($operation->parameters)
         );
     }
 }
