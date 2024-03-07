@@ -12,7 +12,10 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
 final class Server extends Validated
 {
-    /** REQUIRED */
+    /**
+     * REQUIRED
+     * todo https://github.com/OAI/OpenAPI-Specification/discussions/3512#discussioncomment-8234689
+     */
     public readonly string $url;
 
     /**
