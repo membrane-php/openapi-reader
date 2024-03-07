@@ -106,6 +106,14 @@ final class Operation extends Validated
 
         foreach ($result as $index => $parameter) {
             foreach (array_slice($result, $index + 1) as $otherParameter) {
+                if ($this->areParametersIdentical($parameter, $otherParameter)) {
+                    throw InvalidOpenAPI::duplicateParameters(
+                        $this->getIdentifier(),
+                        $parameter->getIdentifier(),
+                        $otherParameter->getIdentifier(),
+                    );
+                }
+
                 if ($this->areParametersSimilar($parameter, $otherParameter)) {
                     $this->addWarning(
                         <<<TEXT
@@ -115,14 +123,6 @@ final class Operation extends Validated
                         TEXT,
                         Warning::SIMILAR_NAMES
                     );
-
-                    if ($this->areParametersIdentical($parameter, $otherParameter)) {
-                        throw InvalidOpenAPI::duplicateParameters(
-                            $this->getIdentifier(),
-                            $parameter->getIdentifier(),
-                            $otherParameter->getIdentifier(),
-                        );
-                    }
                 }
             }
         }
@@ -165,7 +165,8 @@ final class Operation extends Validated
         Parameter $parameter,
         Parameter $otherParameter
     ): bool {
-        return strcasecmp($parameter->name, $otherParameter->name) === 0;
+        return $parameter->name !== $otherParameter->name &&
+            strcasecmp($parameter->name, $otherParameter->name) === 0;
     }
 
     private function canParameterConflict(Parameter $parameter): bool
