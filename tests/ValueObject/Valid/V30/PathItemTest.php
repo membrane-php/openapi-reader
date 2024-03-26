@@ -84,7 +84,7 @@ class PathItemTest extends TestCase
 
     #[Test, DataProvider('provideSimilarNames')]
     #[TestDox('It warns that similar names, though valid, may be confusing')]
-    public function itWarnsAgainstDuplicateNames(string $name1, string $name2): void
+    public function itWarnsAgainstSimilarNames(string $name1, string $name2): void
     {
         $sut = new PathItem(
             new Identifier('test-path-item'),
