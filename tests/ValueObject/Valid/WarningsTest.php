@@ -14,6 +14,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
+//todo test findByWarningCodes
+
 #[CoversClass(Warnings::class)]
 #[CoversClass(Warning::class)]
 #[UsesClass(Identifier::class)]
@@ -42,6 +44,30 @@ class WarningsTest extends TestCase
     }
 
     #[Test, DataProvider('provideWarnings')]
+    public function itGetsAllWarnings(Warning ...$warnings): void
+    {
+        $sut = new Warnings(new Identifier('test'), ...$warnings);
+
+        self::assertSame($warnings, $sut->all());
+    }
+
+    /**
+     * @param Warning[] $expected
+     * @param Warning[] $warnings
+     * @param string[] $codes
+     */
+    #[Test, DataProvider('provideWarningsToFind')]
+    public function itFindsWarningsByCodes(
+        array $expected,
+        array $warnings,
+        array $codes,
+    ): void {
+        $sut = new Warnings(new Identifier('test'), ...$warnings);
+
+        self::assertEquals($expected, $sut->findByWarningCodes(...$codes));
+    }
+
+    #[Test, DataProvider('provideWarnings')]
     public function itChecksItHasWarnings(Warning ...$warnings): void
     {
         $sut = new Warnings(new Identifier('test'), ...$warnings);
@@ -60,14 +86,6 @@ class WarningsTest extends TestCase
         self::assertSame($expected, $sut->hasWarningCodes(...$codes));
     }
 
-    #[Test, DataProvider('provideWarnings')]
-    public function itGetsAllWarnings(Warning ...$warnings): void
-    {
-        $sut = new Warnings(new Identifier('test'), ...$warnings);
-
-        self::assertSame($warnings, $sut->all());
-    }
-
     /**
      * @return Generator<string,Warning[]>
      */
@@ -80,6 +98,76 @@ class WarningsTest extends TestCase
             new Warning('watch out!', 'clock-in'),
             new Warning('duck!', 'quack'),
         ];
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: Warning[],
+     *     1: Warning[],
+     *     2: string[],
+     * }>
+     */
+    public static function provideWarningsToFind(): Generator
+    {
+        foreach (self::provideWarnings() as $case => $warnings) {
+            yield "$case, single, not contained, code" => [
+                [],
+                $warnings,
+                ['This code is most definitely not contained anywhere'],
+            ];
+
+            yield "$case, multiple, not contained, codes" => [
+                [],
+                $warnings,
+                [
+                    'This code is most definitely not contained anywhere',
+                    'This code is almost certainly not contained anywhere',
+                    'This code is guaranteed not to be contained somewhere',
+                ],
+            ];
+
+            if (!empty($warnings)) {
+                $codes = array_map(fn($w) => $w->code, $warnings);
+
+                yield "$case, single, contained, code" => [
+                    [$warnings[0]],
+                    $warnings,
+                    [$codes[0]],
+                ];
+
+                yield "$case, one contained code, duplicated three times" => [
+                    [$warnings[0]],
+                    $warnings,
+                    [$codes[0], $codes[0], $codes[0]],
+                ];
+
+                yield "$case, one contained code, one that is not" => [
+                    [$warnings[0]],
+                    $warnings,
+                    ['This code is certainly not contained', $codes[0]],
+                ];
+
+                if (count($warnings) > 1) {
+                    yield "$case, all contained codes" => [
+                        $warnings,
+                        $warnings,
+                        $codes,
+                    ];
+
+                    $mixedCodes = [];
+                    foreach ($codes as $code) {
+                        $mixedCodes[] = 'This code is certainly not contained';
+                        $mixedCodes[] = $code;
+                    }
+
+                    yield "$case, all contained codes, several that aren't" => [
+                        $warnings,
+                        $warnings,
+                        $mixedCodes,
+                    ];
+                }
+            }
+        }
     }
 
 
@@ -142,10 +230,7 @@ class WarningsTest extends TestCase
                         $warnings,
                     ];
                 }
-
-
             }
-
         }
     }
 }

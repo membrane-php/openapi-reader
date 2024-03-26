@@ -23,14 +23,20 @@ final class Warning
     public const EMPTY_PATHS = 'empty-paths';
 
     /**
+     * OpenAPI, Path, Operation: Servers with identical urls only serve to confuse
+     */
+    public const IDENTICAL_SERVER_URLS = 'identical-server-urls';
+
+    /**
      * Server Variable: If the "enum" is defined, the value SHOULD exist in the enum's values.
      */
     public const IMPOSSIBLE_DEFAULT = 'impossible-default';
 
     /**
-     * OpenAPI, Path Item, Operation: If "servers" are specified, and they're all impossible. Your OpenAPI is unusable.
+     * Server: paths begin with a forward slash, so servers need not end in one
+     * - membrane will ignore trailing forward slashes on server urls
      */
-    public const NO_VALID_SERVERS = 'no-valid-servers';
+    public const REDUNDANT_FORWARD_SLASH = 'redundant-forward-slash';
 
     /**
      * Path Item:
@@ -48,6 +54,7 @@ final class Warning
      * Path Item, Operation: "parameters" can have identical/similar names, but this could be quite confusing.
      */
     public const SIMILAR_NAMES = 'similar-names';
+
 
     public function __construct(
         public readonly string $message,

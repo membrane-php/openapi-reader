@@ -32,21 +32,22 @@ final class Warnings implements HasIdentifier
         return $this->warnings;
     }
 
-    public function hasWarnings(): bool
+    /** @return Warning[] */
+    public function findByWarningCodes(string $code, string ...$codes): array
     {
-        return !empty($this->warnings);
+        return array_filter(
+            $this->warnings,
+            fn($w) => in_array($w->code, [$code, ...$codes])
+        );
     }
 
     public function hasWarningCodes(string $code, string ...$codes): bool
     {
-        $codes = [$code, ...$codes];
+        return !empty($this->findByWarningCodes($code, ...$codes));
+    }
 
-        foreach ($this->warnings as $warning) {
-            if (in_array($warning->code, $codes)) {
-                return true;
-            }
-        }
-
-        return false;
+    public function hasWarnings(): bool
+    {
+        return !empty($this->warnings);
     }
 }
