@@ -56,7 +56,7 @@ class ServerTest extends TestCase
     /**
      * @param string[] $expected
      */
-    #[Test, DataProvider('provideUrlsToGetVariablesFrom')]
+    #[Test, DataProvider('provideUrlsToGetVariableNamesFrom')]
     #[TestDox('It returns a list of variable names in order of appearance within the URL')]
     public function itGetsVariableNames(
         array $expected,
@@ -65,6 +65,30 @@ class ServerTest extends TestCase
         $sut = new Server(new Identifier('test'), $server);
 
         self::assertSame($expected, $sut->getVariableNames());
+    }
+
+    /**
+     * @param Partial\ServerVariable[] $partialServerVariables
+     */
+    #[Test, DataProvider('provideUrlsToGetVariablesFrom')]
+    #[TestDox('It returns a list of variables in order of appearance within the URL')]
+    public function itContainsServerVariables(
+        array $partialServerVariables,
+        Partial\Server $server
+    ): void {
+        $parentIdentifier = new Identifier('test');
+
+        $expected = array_map(
+            fn($v) => new ServerVariable(
+                $parentIdentifier->append($server->url)->append($v->name),
+                $v
+            ),
+            $partialServerVariables
+        );
+
+        $sut = new Server($parentIdentifier, $server);
+
+        self::assertEquals($expected, $sut->variables);
     }
 
 
@@ -196,10 +220,28 @@ class ServerTest extends TestCase
     /**
      * @return Generator<array{0:string[], 1:Partial\Server}>
      */
-    public static function provideUrlsToGetVariablesFrom(): Generator
+    public static function provideUrlsToGetVariableNamesFrom(): Generator
     {
         $case = fn(array $variables) => [
             $variables,
+            self::createServerWithVariables(...$variables),
+        ];
+
+        yield 'no variables' => $case([]);
+        yield 'one variable' => $case(['var1']);
+        yield 'three variables' => $case(['var1', 'var2', 'var3']);
+    }
+
+    /**
+     * @return Generator<array{0:Partial\ServerVariable[], 1:Partial\Server}>
+     */
+    public static function provideUrlsToGetVariablesFrom(): Generator
+    {
+        $case = fn(array $variables) => [
+            array_combine(
+                $variables,
+                array_map(fn($v) => PartialHelper::createServerVariable($v), $variables),
+            ),
             self::createServerWithVariables(...$variables),
         ];
 
