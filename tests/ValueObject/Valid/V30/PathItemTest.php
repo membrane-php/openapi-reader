@@ -53,7 +53,10 @@ class PathItemTest extends TestCase
         Partial\PathItem $partialPathItem
     ): void {
         $identifier = new Identifier('test-path-item');
-        $expected = array_map(fn($p) => new Parameter($identifier, $p), $partialExpected);
+        $expected = array_values(array_map(
+            fn($p) => new Parameter($identifier, $p),
+            $partialExpected
+        ));
 
         $sut = new PathItem($identifier, [], $partialPathItem);
 
@@ -177,7 +180,7 @@ class PathItemTest extends TestCase
             )
         );
 
-        self::assertEquals($expected, $sut->servers);
+        self::assertEquals(array_values($expected), $sut->servers);
     }
 
     public static function providePartialPathItems(): Generator
@@ -193,14 +196,26 @@ class PathItemTest extends TestCase
 
         yield 'one parameter' => [
             [$p1],
-            PartialHelper::createPathItem(parameters: [
-                $p1
-            ]),
+            PartialHelper::createPathItem(parameters: [$p1]),
+        ];
+
+        yield 'one parameter with name used as key' => [
+            [$p1],
+            PartialHelper::createPathItem(parameters: ['p1' => $p1]),
         ];
 
         yield 'three parameters' => [
             [$p1, $p2, $p3],
             PartialHelper::createPathItem(parameters: [$p1, $p2, $p3]),
+        ];
+
+        yield 'three parameters with names used as keys' => [
+            [$p1, $p2, $p3],
+            PartialHelper::createPathItem(parameters: [
+                'p1' => $p1,
+                'p2' => $p2,
+                'p3' => $p3,
+            ]),
         ];
     }
 
@@ -277,7 +292,8 @@ class PathItemTest extends TestCase
         $identifier = $parentIdentifier->append('test-path');
 
         $openAPIServers = [
-            new Server($parentIdentifier, PartialHelper::createServer(url: '/'))
+            new Server($parentIdentifier, PartialHelper::createServer(url: '/')),
+            new Server($parentIdentifier, PartialHelper::createServer(url: '/petstore.io')),
         ];
 
         $case = fn($pathServers) => [
@@ -289,11 +305,17 @@ class PathItemTest extends TestCase
         ];
 
         yield 'no Path Item Servers' => $case([]);
-        yield 'one Path Item Server' => $case([PartialHelper::createServer()]);
+        yield 'one Path Item Server with its url used as a key' => $case([
+            'https://server-one.io' =>
+                PartialHelper::createServer(url: 'https://server-one.io')
+        ]);
         yield 'three Path Item Servers' => $case([
-            PartialHelper::createServer(url: 'https://server-one.io'),
-            PartialHelper::createServer(url: 'https://server-two.co.uk'),
-            PartialHelper::createServer(url: 'https://server-three.net')
+            'https://server-one.io' =>
+                PartialHelper::createServer(url: 'https://server-one.io'),
+            'https://server-two.co.uk' =>
+                PartialHelper::createServer(url: 'https://server-two.co.uk'),
+            'https://server-three.net' =>
+                PartialHelper::createServer(url: 'https://server-three.net')
         ]);
     }
 }

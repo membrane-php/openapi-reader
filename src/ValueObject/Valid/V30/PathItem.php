@@ -108,16 +108,16 @@ final class PathItem extends Validated
 
     /**
      * @param Partial\Parameter[] $parameters
-     * @return Parameter[]
+     * @return array<int,Parameter>
      */
     private function validateParameters(array $parameters): array
     {
-        $result = array_map(
+        $result = array_values(array_map(
             fn($p) => new Parameter($this->getIdentifier(), $p),
             $parameters
-        );
+        ));
 
-        foreach (array_values($result) as $index => $parameter) {
+        foreach ($result as $index => $parameter) {
             foreach (array_slice($result, $index + 1) as $otherParameter) {
                 if ($this->areParametersIdentical($parameter, $otherParameter)) {
                     throw InvalidOpenAPI::duplicateParameters(
