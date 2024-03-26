@@ -120,6 +120,20 @@ class PathItemTest extends TestCase
         );
     }
 
+    #[Test]
+    #[TestDox('it warns that there are no operations specified on this path')]
+    public function itWarnsAgainstHavingNoOperations(): void
+    {
+        $partialPathItem = PartialHelper::createPathItem();
+
+        $sut = new PathItem(new Identifier('test'), [], $partialPathItem);
+
+        self::assertEquals(
+            new Warning('No Operations on Path', Warning::EMPTY_PATH),
+            $sut->getWarnings()->all()[0]
+        );
+    }
+
     /**
      * @param array<string,Operation> $expected
      * @param Partial\Operation[] $operations
