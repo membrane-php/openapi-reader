@@ -14,7 +14,6 @@ final class Server extends Validated
 {
     /**
      * REQUIRED
-     * todo https://github.com/OAI/OpenAPI-Specification/discussions/3512#discussioncomment-8234689
      */
     public readonly string $url;
 
@@ -35,9 +34,9 @@ final class Server extends Validated
             throw InvalidOpenAPI::serverMissingUrl($parentIdentifier);
         }
 
-        $this->url = $this->validateUrl($parentIdentifier, $server->url);
-
         parent::__construct($parentIdentifier->append($server->url));
+
+        $this->url = $this->validateUrl($parentIdentifier, $server->url);
 
         $this->variables = $this->validateVariables(
             $this->getIdentifier(),
@@ -99,7 +98,14 @@ final class Server extends Validated
             throw InvalidOpenAPI::urlUnclosedVariable($identifier->append($url));
         }
 
-        return $url;
+        if (str_ends_with($url, '/') && $url !== '/') {
+            $this->addWarning(
+                'paths begin with a forward slash, so servers need not end in one',
+                Warning::REDUNDANT_FORWARD_SLASH,
+            );
+        }
+
+        return rtrim($url, '/');
     }
 
     /**

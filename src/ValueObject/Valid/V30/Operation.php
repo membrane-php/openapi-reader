@@ -88,9 +88,20 @@ final class Operation extends Validated
             return $pathServers;
         }
 
-        return array_values(
-            array_map(fn($s) => new Server($identifier, $s), $operationServers)
-        );
+        $result = array_values(array_map(
+            fn($s) => new Server($identifier, $s),
+            $operationServers
+        ));
+
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
+        if (count($result) !== count($uniqueURLS)) {
+            $this->addWarning(
+                'Server URLs are not unique',
+                Warning::IDENTICAL_SERVER_URLS
+            );
+        }
+
+        return $result;
     }
 
     /**

@@ -20,6 +20,9 @@ final class FromCebe
     public static function createOpenAPI(
         Cebe\OpenApi $openApi
     ): Valid\V30\OpenAPI {
+        $servers = count($openApi->servers) === 1 && $openApi->servers[0]->url === '/' ?
+            [] :
+            $openApi->servers;
 
         /**
          * todo when phpstan 1.11 stable is released
@@ -31,7 +34,7 @@ final class FromCebe
             $openApi->openapi,
             $openApi->info?->title, // @phpstan-ignore-line
             $openApi->info?->version, // @phpstan-ignore-line
-            self::createServers($openApi->servers),
+            self::createServers($servers),
             self::createPaths($openApi->paths)
         ));
     }

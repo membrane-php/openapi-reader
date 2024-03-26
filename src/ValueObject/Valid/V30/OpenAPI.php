@@ -53,19 +53,30 @@ final class OpenAPI extends Validated
 
     /**
      * @param Partial\Server[] $servers
-     * @return array<int,Server>>
+     * @return array<int,Server>
      */
     private function validateServers(
         Identifier $identifier,
         array $servers
     ): array {
         if (empty($servers)) {
-            $servers = [new Partial\Server('/')];
+            return [new Server($identifier, new Partial\Server('/'))];
         }
 
-        return array_values(
-            array_map(fn($s) => new Server($identifier, $s), $servers)
-        );
+        $result = array_values(array_map(
+            fn($s) => new Server($identifier, $s),
+            $servers
+        ));
+
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
+        if (count($result) !== count($uniqueURLS)) {
+            $this->addWarning(
+                'Server URLs are not unique',
+                Warning::IDENTICAL_SERVER_URLS
+            );
+        }
+
+        return $result;
     }
 
         /**

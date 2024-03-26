@@ -101,9 +101,20 @@ final class PathItem extends Validated
             return $openAPIServers;
         }
 
-        return array_values(
-            array_map(fn($s) => new Server($identifier, $s), $pathServers)
-        );
+        $result = array_values(array_map(
+            fn($s) => new Server($identifier, $s),
+            $pathServers
+        ));
+
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
+        if (count($result) !== count($uniqueURLS)) {
+            $this->addWarning(
+                'Server URLs are not unique',
+                Warning::IDENTICAL_SERVER_URLS
+            );
+        }
+
+        return $result;
     }
 
     /**

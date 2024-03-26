@@ -53,7 +53,7 @@ class OpenAPITest extends TestCase
     #[TestDox('no "paths" is technically valid, but it does not leave much for Membrane to validate.')]
     public function itWarnsAgainstEmptyPaths(): void
     {
-        $expected = new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
+        $expected = [new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS)];
         $title = 'My API';
         $version = '1.2.1';
         $sut = new OpenAPI(PartialHelper::createOpenAPI(
@@ -62,7 +62,28 @@ class OpenAPITest extends TestCase
             paths: [],
         ));
 
-        self::assertEquals($expected, $sut->getWarnings()->all()[0]);
+        self::assertEquals(
+            $expected,
+            $sut->getWarnings()->findByWarningCodes(Warning::EMPTY_PATHS)
+        );
+    }
+
+    /**
+     * @param Warning[] $expected
+     */
+    #[Test, DataProvider('provideDuplicateServers')]
+    public function itWarnsAgainstDuplicateServers(
+        array $expected,
+        Partial\OpenAPI $openAPI,
+    ): void {
+        $sut = new OpenAPI($openAPI);
+
+        self::assertEquals(
+            $expected,
+            $sut
+                ->getWarnings()
+                ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS)
+        );
     }
 
     #[Test]
@@ -84,6 +105,12 @@ class OpenAPITest extends TestCase
         self::assertEquals($expected, $sut->servers);
     }
 
+    /**
+     * @return Generator<array{
+     *     0: InvalidOpenAPI,
+     *     1: Partial\OpenAPI,
+     * }>
+     */
     public static function providePartialOpenAPIs(): Generator
     {
         $title = 'Test OpenAPI';
@@ -172,7 +199,6 @@ class OpenAPITest extends TestCase
                     PartialHelper::createPathItem(
                         path: '/first',
                         get: PartialHelper::createOperation(operationId: 'duplicate-id')
-
                     ),
                     PartialHelper::createPathItem(
                         path: '/second',
@@ -181,5 +207,39 @@ class OpenAPITest extends TestCase
                 ]
             ]
         );
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: Warning[],
+     *     1: Partial\OpenAPI,
+     * }>
+     */
+    public static function provideDuplicateServers(): Generator
+    {
+        $expectedWarning = new Warning(
+            'Server URLs are not unique',
+            Warning::IDENTICAL_SERVER_URLS
+        );
+
+        $case = fn($servers) => [
+            [$expectedWarning],
+            PartialHelper::createOpenAPI(servers: $servers),
+        ];
+
+        yield 'Completely identical: "/"' => $case([
+            PartialHelper::createServer('/'),
+            PartialHelper::createServer('/'),
+        ]);
+
+        yield 'Completely identical: "https://www.server.net"' => $case([
+            PartialHelper::createServer('https://www.server.net'),
+            PartialHelper::createServer('https://www.server.net'),
+        ]);
+
+        yield 'Identical IF you ignore trailing forward slashes' => $case([
+            PartialHelper::createServer(''),
+            PartialHelper::createServer('/'),
+        ]);
     }
 }

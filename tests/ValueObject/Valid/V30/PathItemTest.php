@@ -318,4 +318,9 @@ class PathItemTest extends TestCase
                 PartialHelper::createServer(url: 'https://server-three.net')
         ]);
     }
+
+    public static function provideServersToWarnAgainst(): Generator
+    {
+        
+    }
 }

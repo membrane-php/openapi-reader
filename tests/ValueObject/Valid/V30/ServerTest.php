@@ -95,8 +95,8 @@ class ServerTest extends TestCase
     /**
      * @param Warning[] $expected
      */
-    #[Test, DataProvider('provideServersWithWarnings')]
-    #[TestDox('It warns against having a variable defined that does not appear in the "url')]
+    #[Test, DataProvider('provideServersWithRedundantVariables')]
+    #[TestDox('It warns against having a variable defined that does not appear in the "url"')]
     public function itWarnsAgainstRedundantVariables(
         array $expected,
         Partial\Server $server
@@ -106,7 +106,19 @@ class ServerTest extends TestCase
         self::assertEquals($expected, $sut->getWarnings()->all());
     }
 
+    /**
+     * @param Warning[] $expected
+     */
+    #[Test, DataProvider('provideServersWithTrailingForwardSlashes')]
+    #[TestDox('It warns that servers do not need trailing forward slashes')]
+    public function itWarnsAgainstTrailingForwardSlashes(
+        array $expected,
+        Partial\Server $server
+    ): void {
+        $sut = new Server(new Identifier('test'), $server);
 
+        self::assertEquals($expected, $sut->getWarnings()->all());
+    }
 
     public static function provideServersToValidate(): Generator
     {
@@ -202,7 +214,7 @@ class ServerTest extends TestCase
     public static function provideUrlPatterns(): Generator
     {
         yield 'url without variables' => [
-            'https://server.net/',
+            'https://server.net',
             self::createServerWithVariables(),
         ];
 
@@ -253,7 +265,7 @@ class ServerTest extends TestCase
     /**
      * @return Generator<array{0:Warning[], 1:Partial\Server}>
      */
-    public static function provideServersWithWarnings(): Generator
+    public static function provideServersWithRedundantVariables(): Generator
     {
         $redundantVariables = fn($variables) => [
            array_map(
@@ -274,5 +286,31 @@ class ServerTest extends TestCase
         yield 'no warnings' => $redundantVariables([]);
         yield 'one redundant variable' => $redundantVariables(['v1']);
         yield 'three redundant variables' => $redundantVariables(['v1', 'v2', 'v3']);
+    }
+
+    /**
+     * @return Generator<array{0:Warning[], 1:Partial\Server}>
+     */
+    public static function provideServersWithTrailingForwardSlashes(): Generator
+    {
+        $expectedWarning = new Warning(
+            'paths begin with a forward slash, so servers need not end in one',
+            Warning::REDUNDANT_FORWARD_SLASH,
+        );
+
+        yield 'No warning for the default server url "/"' => [
+            [],
+            PartialHelper::createServer('/'),
+        ];
+
+        yield 'Warning for one forward slash' => [
+            [$expectedWarning],
+            PartialHelper::createServer('https://www.server.net/'),
+        ];
+
+        yield 'Warning for multiple forward slashes' => [
+            [$expectedWarning],
+            PartialHelper::createServer('https://www.server.net///'),
+        ];
     }
 }
