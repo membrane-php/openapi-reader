@@ -13,21 +13,11 @@ use RuntimeException;
 
 final class CannotSupport extends RuntimeException
 {
-    public const UNSUPPORTED_METHOD = 0;
-    public const UNSUPPORTED_VERSION = 1;
-    public const MISSING_OPERATION_ID = 2;
-    public const MISSING_TYPE_DECLARATION = 3;
-    public const AMBIGUOUS_RESOLUTION = 4;
+    public const UNSUPPORTED_VERSION = 0;
+    public const MISSING_OPERATION_ID = 1;
+    public const MISSING_TYPE_DECLARATION = 2;
+    public const AMBIGUOUS_RESOLUTION = 3;
     public const CANNOT_PARSE = 4;
-
-    public static function unsupportedMethod(string $pathUrl, string $method): self
-    {
-        $message = <<<TEXT
-            Membrane does not currently support the method: '$method'.
-            Found on Path: '$pathUrl'
-            TEXT;
-        return new self($message, self::UNSUPPORTED_METHOD);
-    }
 
     public static function membraneReaderOnlySupportsv30(): self
     {
