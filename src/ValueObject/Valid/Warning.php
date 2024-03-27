@@ -6,6 +6,12 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid;
 
 final class Warning
 {
+    public function __construct(
+        public readonly string $message,
+        public readonly string $code
+    ) {
+    }
+
     /**
      * Server Variable: "enum" SHOULD NOT be empty
      * Schema: "enum" SHOULD have at least one element
@@ -54,11 +60,4 @@ final class Warning
      * Path Item, Operation: "parameters" can have identical/similar names, but this could be quite confusing.
      */
     public const SIMILAR_NAMES = 'similar-names';
-
-
-    public function __construct(
-        public readonly string $message,
-        public readonly string $code
-    ) {
-    }
 }
