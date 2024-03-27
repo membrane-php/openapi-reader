@@ -84,6 +84,20 @@ class ParameterTest extends TestCase
         self::assertSame($in, $sut->in);
     }
 
+    #[Test]
+    #[DataProvider('provideDefaultStylesPerLocation')]
+    public function itWillDefaultStylePerLocation(
+        Style $expected,
+        In $in,
+    ): void {
+        $sut = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter(in: $in->value)
+        );
+
+        self::assertSame($expected, $sut->style);
+    }
+
     public static function provideInvalidPartialParameters(): Generator
     {
         $parentIdentifier = new Identifier('test');
@@ -272,6 +286,23 @@ class ParameterTest extends TestCase
         yield 'spaceDelimited - query' => [Style::SpaceDelimited, In::Query];
         yield 'pipeDelimited - query' => [Style::PipeDelimited, In::Query];
         yield 'deepObject - query' => [Style::DeepObject, In::Query];
+
+        yield 'simple - header' => [Style::Simple, In::Header];
+
+        yield 'form - cookie' => [Style::Form, In::Cookie];
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: Style,
+     *     1: In,
+     * }>
+     */
+    public static function provideDefaultStylesPerLocation(): Generator
+    {
+        yield 'simple - path' => [Style::Simple, In::Path];
+
+        yield 'form - query' => [Style::Form, In::Query];
 
         yield 'simple - header' => [Style::Simple, In::Header];
 
