@@ -86,16 +86,53 @@ class ParameterTest extends TestCase
 
     #[Test]
     #[DataProvider('provideDefaultStylesPerLocation')]
-    public function itWillDefaultStylePerLocation(
+    public function itCanDefaultStylePerLocation(
         Style $expected,
         In $in,
     ): void {
         $sut = new Parameter(
             new Identifier('test'),
-            PartialHelper::createParameter(in: $in->value)
+            PartialHelper::createParameter(in: $in->value, style: null)
         );
 
         self::assertSame($expected, $sut->style);
+    }
+
+    #[Test, DataProvider('provideStyles')]
+    public function itCanDefaultExplodePerStyle(In $in, Style $style): void
+    {
+        $sut = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter(
+                in: $in->value,
+                style: $style->value,
+                explode: null
+            )
+        );
+
+        self::assertSame($style === Style::Form, $sut->explode);
+    }
+
+    #[Test, DataProvider('provideLocations')]
+    public function itCanDefaultRequiredIfOptional(In $in): void
+    {
+        $sut = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter(in: $in->value, required: null)
+        );
+
+        self::assertFalse($sut->required);
+    }
+
+    #[Test, DataProvider('provideRequired')]
+    public function itWillTakeRequiredIfSpecified(bool $required): void
+    {
+        $sut = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter(in: 'query', required: $required)
+        );
+
+        self::assertSame($required, $sut->required);
     }
 
     #[Test, DataProvider('provideParametersThatMayBeIdentical')]
@@ -339,6 +376,30 @@ class ParameterTest extends TestCase
         yield 'simple - header' => [Style::Simple, In::Header];
 
         yield 'form - cookie' => [Style::Form, In::Cookie];
+    }
+
+    public static function provideStyles(): Generator
+    {
+        yield 'matrix' => [In::Path, Style::Matrix];
+        yield 'label' => [In::Path, Style::Label];
+        yield 'form' => [In::Query, Style::Form];
+        yield 'simple' => [In::Path, Style::Simple];
+        yield 'spaceDelimited' => [In::Query, Style::SpaceDelimited];
+        yield 'pipeDelimited' => [In::Query, Style::PipeDelimited];
+        yield 'deepObject' => [In::Query, Style::DeepObject];
+    }
+
+    public static function provideLocations(): Generator
+    {
+        yield 'query' => [In::Query];
+        yield 'header' => [In::Header];
+        yield 'cookie' => [In::Cookie];
+    }
+
+    public static function provideRequired(): Generator
+    {
+        yield 'required' => [true];
+        yield 'not required' => [false];
     }
 
     /**
