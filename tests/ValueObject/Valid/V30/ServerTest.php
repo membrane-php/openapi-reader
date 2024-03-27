@@ -159,6 +159,16 @@ class ServerTest extends TestCase
             ]
         );
 
+        yield '"url" with one variable missing a name' => $case(
+            InvalidOpenAPI::serverVariableMissingName(
+                $parentIdentifier->append('https://server.net/{var1}'),
+            ),
+            [
+                'url' => 'https://server.net/{var1}',
+                'variables' => [PartialHelper::createServerVariable(name: null)]
+            ]
+        );
+
         yield '"url" with one undefined variable' => $case(
             InvalidOpenAPI::serverHasUndefinedVariables(
                 $parentIdentifier->append('https://server.net/{var1}'),
