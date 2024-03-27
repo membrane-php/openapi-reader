@@ -111,6 +111,17 @@ final class Parameter extends Validated
         return array_key_first($this->content);
     }
 
+    public function isIdentical(Parameter $other): bool
+    {
+        return $this->name === $other->name && $this->in === $other->in;
+    }
+
+    public function isSimilar(Parameter $other): bool
+    {
+        return $this->name !== $other->name &&
+            mb_strtolower($this->name) === mb_strtolower($other->name);
+    }
+
     private function validateIn(Identifier $identifier, ?string $in): In
     {
         if (is_null($in)) {
