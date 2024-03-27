@@ -85,16 +85,34 @@ class PathItemTest extends TestCase
         new PathItem($identifier, [], $pathItem);
     }
 
-    #[Test, DataProvider('provideSimilarNames')]
-    #[TestDox('It warns that similar names, though valid, may be confusing')]
-    public function itWarnsAgainstSimilarNames(string $name1, string $name2): void
+    #[Test]
+    #[TestDox('Identical names in different locations may serve a purpose')]
+    public function itDoesNotWarnAgainstIdenticalNames(): void
     {
         $sut = new PathItem(
             new Identifier('test-path-item'),
             [],
             PartialHelper::createPathItem(parameters: [
-                PartialHelper::createParameter(name: $name1, in:'path'),
-                PartialHelper::createParameter(name: $name2, in:'query')
+                PartialHelper::createParameter(name: 'param', in: 'path'),
+                PartialHelper::createParameter(name: 'param', in: 'query')
+            ])
+        );
+
+        self::assertEmpty($sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+    }
+
+    #[Test]
+    #[TestDox('It warns that similar names, though valid, may be confusing')]
+    public function itWarnsAgainstSimilarNames(): void
+    {
+        $sut = new PathItem(
+            new Identifier('test-path-item'),
+            [],
+            PartialHelper::createPathItem(parameters: [
+                PartialHelper::createParameter(name: 'param'),
+                PartialHelper::createParameter(name: 'PARAM')
             ])
         );
 
@@ -253,8 +271,8 @@ class PathItemTest extends TestCase
 
     public static function provideSimilarNames(): Generator
     {
-        yield 'two identical names' => ['param', 'param'];
         yield 'two names that only differ in case' => ['param', 'PARAM'];
+
     }
 
     /**

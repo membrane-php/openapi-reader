@@ -192,6 +192,47 @@ class OperationTest extends TestCase
             ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
     }
 
+    /**
+     * @param Parameter[] $pathParameters
+     * @param Partial\Parameter[] $operationParameters
+     */
+    #[Test, DataProvider('provideSimilarParameters')]
+    #[TestDox('It warns that similarly named parameters may be confusing')]
+    public function itWarnsAgainstSimilarParameters(
+        array $pathParameters,
+        array $operationParameters,
+    ): void {
+        $sut = new Operation(
+            new Identifier('test'),
+            [],
+            $pathParameters,
+            Method::GET,
+            PartialHelper::createOperation(parameters: $operationParameters),
+        );
+        self::assertNotEmpty($sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+    }
+
+    #[Test, TestDox('The PathItem will already warn about its own parameters')]
+    public function itWillNotWarnAgainstSimilarPathParameters(): void
+    {
+        $parameter = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter()
+        );
+
+        $sut = new Operation(
+            new Identifier('test'),
+            [],
+            [$parameter, $parameter],
+            Method::GET,
+            PartialHelper::createOperation(),
+        );
+
+        self::assertEmpty($sut->getWarnings()->findByWarningCodes(Warning::SIMILAR_NAMES));
+    }
+
     public static function provideParameters(): Generator
     {
         $parentIdentifier = new Identifier('/path');
@@ -347,5 +388,23 @@ class OperationTest extends TestCase
             PartialHelper::createServer(''),
             PartialHelper::createServer('/'),
         ]);
+    }
+
+    public static function provideSimilarParameters(): Generator
+    {
+        $case = fn(array $pathParamNames, array $operationParamNames) => [
+            array_map(
+                fn($p) => new Parameter(new Identifier(''), PartialHelper::createParameter(name: $p)),
+                $pathParamNames
+            ),
+            array_map(
+                fn($p) => PartialHelper::createParameter(name: $p),
+                $operationParamNames
+            ),
+        ];
+
+        yield 'similar path param names' => $case(['param', 'Param'], []);
+        yield 'similar operation param names' =>  $case([], ['param', 'Param']);
+        yield 'similar param names' => $case(['param'], ['Param']);
     }
 }
