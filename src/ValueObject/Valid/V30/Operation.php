@@ -117,7 +117,7 @@ final class Operation extends Validated
 
         foreach ($result as $index => $parameter) {
             foreach (array_slice($result, $index + 1) as $otherParameter) {
-                if ($this->areParametersIdentical($parameter, $otherParameter)) {
+                if ($parameter->isIdentical($otherParameter)) {
                     throw InvalidOpenAPI::duplicateParameters(
                         $this->getIdentifier(),
                         $parameter->getIdentifier(),
@@ -125,7 +125,7 @@ final class Operation extends Validated
                     );
                 }
 
-                if ($this->areParametersSimilar($parameter, $otherParameter)) {
+                if ($parameter->isSimilar($otherParameter)) {
                     $this->addWarning(
                         <<<TEXT
                         'This contains confusingly similar parameter names:
@@ -156,11 +156,12 @@ final class Operation extends Validated
         foreach ($pathParameters as $pathParameter) {
             foreach ($result as $operationParameter) {
                 if ($this->areParametersIdentical($pathParameter, $operationParameter)) {
-                    break;
+                    continue 2;
                 }
-                $result[] = $pathParameter;
             }
+            $result[] = $pathParameter;
         }
+
         return array_values($result);
     }
 
@@ -168,16 +169,7 @@ final class Operation extends Validated
         Parameter $parameter,
         Parameter $otherParameter
     ): bool {
-        return $parameter->name === $otherParameter->name &&
-            $parameter->in === $otherParameter->in;
-    }
-
-    private function areParametersSimilar(
-        Parameter $parameter,
-        Parameter $otherParameter
-    ): bool {
-        return $parameter->name !== $otherParameter->name &&
-            strcasecmp($parameter->name, $otherParameter->name) === 0;
+        return $parameter->isIdentical($otherParameter);
     }
 
     private function canParameterConflict(Parameter $parameter): bool
