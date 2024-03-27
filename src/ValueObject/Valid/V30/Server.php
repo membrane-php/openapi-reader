@@ -45,11 +45,6 @@ final class Server extends Validated
         );
     }
 
-    public function hasVariables(): bool
-    {
-        return preg_match('#{[^/]+}#', $this->url) === 1;
-    }
-
     /**
      * Returns the list of variable names in order of appearance within the URL.
      * @return array<int, string>
