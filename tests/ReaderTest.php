@@ -29,6 +29,8 @@ use TypeError;
 #[UsesClass(Valid\V30\OpenAPI::class)]
 #[UsesClass(Partial\Server::class)]
 #[UsesClass(Valid\V30\Server::class)]
+#[UsesClass(Partial\ServerVariable::class)]
+#[UsesClass(Valid\V30\ServerVariable::class)]
 #[UsesClass(Partial\PathItem::class)]
 #[UsesClass(Valid\V30\PathItem::class)]
 #[UsesClass(Partial\Operation::class)]

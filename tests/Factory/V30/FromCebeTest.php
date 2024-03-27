@@ -18,6 +18,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Server;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\ServerVariable;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
@@ -32,6 +33,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Partial\OpenAPI::class)]
 #[UsesClass(Server::class)]
 #[UsesClass(Partial\Server::class)]
+#[UsesClass(ServerVariable::class)]
+#[UsesClass(Partial\ServerVariable::class)]
 #[UsesClass(PathItem::class)]
 #[UsesClass(Partial\PathItem::class)]
 #[UsesClass(Operation::class)]

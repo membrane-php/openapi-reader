@@ -63,7 +63,15 @@ final class OpenAPIProvider
             'openapi' => '3.0.0',
             'info' => ['title' => 'My Detailed OpenAPI', 'version' => '1.0.1'],
             'servers' => [
-                ['url' => 'https://server.net']
+                [
+                    'url' => 'https://server.net/{version}',
+                    'variables' => [
+                        'version' => [
+                            'default' => '2.1',
+                            'enum' => ['2.0', '2.1', '2.2',]
+                        ]
+                    ]
+                ]
             ],
             'paths' => [
                 '/first' => [
@@ -169,104 +177,7 @@ final class OpenAPIProvider
      */
     public static function detailedV30CebeObject(): Cebe\OpenApi
     {
-        return new Cebe\OpenApi([
-            'openapi' => '3.0.0',
-            'info' => ['title' => 'My Detailed OpenAPI', 'version' => '1.0.1'],
-            'servers' => [
-                ['url' => 'https://server.net']
-            ],
-            'paths' => [
-                '/first' => [
-                    'parameters' => [
-                        [
-                            'name' => 'limit',
-                            'in' => 'query',
-                            'required' => false,
-                            'schema' => ['type' => 'integer']
-                        ]
-                    ],
-                    'get' => [
-                        'operationId' => 'first-get',
-                        'parameters' => [
-                            [
-                                'name' => 'pet',
-                                'in' => 'header',
-                                'required' => true,
-                                'content' => [
-                                    'application/json' => [
-                                        'schema' => [
-                                            'allOf' => [
-                                                ['type' => 'integer'],
-                                                ['type' => 'number'],
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Successful Response'
-                            ]
-                        ]
-                    ]
-                ],
-                '/second' => [
-                    'servers' => [
-                        ['url' => 'https://second-server.co.uk']
-                    ],
-                    'parameters' => [
-                        [
-                            'name' => 'limit',
-                            'in' => 'query',
-                            'required' => false,
-                            'schema' => ['type' => 'integer']
-                        ]
-                    ],
-                    'get' => [
-                        'operationId' => 'second-get',
-                        'parameters' => [
-                            [
-                                'name' => 'pet',
-                                'in' => 'header',
-                                'required' => true,
-                                'content' => [
-                                    'application/json' => [
-                                        'schema' => [
-                                            'allOf' => [
-                                                ['type' => 'integer'],
-                                                ['type' => 'number']
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Successful Response'
-                            ]
-                        ]
-                    ],
-                    'put' => [
-                        'operationId' => 'second-put',
-                        'servers' => [
-                            ['url' => 'https://second-put.com']
-                        ],
-                        'parameters' => [[
-                            'name' => 'user',
-                            'in' => 'cookie',
-                            'schema' => ['type' => 'object'],
-                        ]],
-                        'responses' => [
-                            '200' => [
-                                'description' => 'Successful Response'
-                            ]
-                        ]
-                    ]
-                ]
-            ],
-        ]);
+        return new Cebe\OpenApi(json_decode(self::detailedV30String(), true));
     }
 
     /**
@@ -280,7 +191,16 @@ final class OpenAPIProvider
             title: 'My Detailed OpenAPI',
             version: '1.0.1',
             servers: [
-                PartialHelper::createServer(url: 'https://server.net'),
+                PartialHelper::createServer(
+                    url: 'https://server.net/{version}',
+                    variables: [
+                        PartialHelper::createServerVariable(
+                            name: 'version',
+                            default: '2.1',
+                            enum: ['2.0', '2.1', '2.2'],
+                        ),
+                    ]
+                ),
             ],
             paths: [
                 PartialHelper::createPathItem(
