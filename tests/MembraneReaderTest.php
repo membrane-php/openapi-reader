@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException};
+use Generator;
 use Membrane\OpenAPIReader\{FileFormat, Method, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
@@ -16,6 +18,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
 #[CoversClass(MembraneReader::class)]
 #[CoversClass(CannotRead::class), CoversClass(CannotSupport::class), CoversClass(InvalidOpenAPI::class)]
