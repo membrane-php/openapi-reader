@@ -50,22 +50,15 @@ class OpenAPITest extends TestCase
     }
 
     #[Test]
-    #[TestDox('no "paths" is technically valid, but it does not leave much for Membrane to validate.')]
+    #[TestDox('"paths" can be empty, but it does not leave much for Membrane to validate.')]
     public function itWarnsAgainstEmptyPaths(): void
     {
         $expected = [new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS)];
-        $title = 'My API';
-        $version = '1.2.1';
-        $sut = new OpenAPI(PartialHelper::createOpenAPI(
-            title: $title,
-            version: $version,
-            paths: [],
-        ));
+        $sut = new OpenAPI(PartialHelper::createOpenAPI(paths: []));
 
-        self::assertEquals(
-            $expected,
-            $sut->getWarnings()->findByWarningCodes(Warning::EMPTY_PATHS)
-        );
+        $actual = $sut->getWarnings()->findByWarningCodes(Warning::EMPTY_PATHS);
+
+        self::assertEquals($expected, $actual);
     }
 
     /**
