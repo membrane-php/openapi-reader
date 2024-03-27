@@ -3,6 +3,9 @@
     "source": {
         "directories": [
             "src"
+        ],
+        "excludes": [
+            "Exception", // We don't need the Exception messages being altered
         ]
     },
     "minCoveredMsi": 90,
