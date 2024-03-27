@@ -155,7 +155,7 @@ final class Operation extends Validated
 
         foreach ($pathParameters as $pathParameter) {
             foreach ($result as $operationParameter) {
-                if ($this->areParametersIdentical($pathParameter, $operationParameter)) {
+                if ($operationParameter->isIdentical($pathParameter)) {
                     continue 2;
                 }
             }
@@ -163,13 +163,6 @@ final class Operation extends Validated
         }
 
         return array_values($result);
-    }
-
-    private function areParametersIdentical(
-        Parameter $parameter,
-        Parameter $otherParameter
-    ): bool {
-        return $parameter->isIdentical($otherParameter);
     }
 
     private function canParameterConflict(Parameter $parameter): bool
