@@ -98,6 +98,38 @@ class ParameterTest extends TestCase
         self::assertSame($expected, $sut->style);
     }
 
+    #[Test, DataProvider('provideParametersThatMayBeIdentical')]
+    #[TestDox('Parameter "name" and "in" must be identical')]
+    public function itChecksIfIdentical(
+        bool $expected,
+        Partial\Parameter $parameter,
+        Partial\Parameter $otherParameter,
+    ): void {
+        $sut = new Parameter(new Identifier(''), $parameter);
+        $otherSUT = new Parameter(new Identifier(''), $otherParameter);
+
+        self::assertSame($expected, $sut->isIdentical($otherSUT));
+    }
+
+    #[Test, DataProvider('provideNamesThatMayBeSimilar')]
+    #[TestDox('"name" MUST NOT be identical, unless compared by case-insensitive comparison')]
+    public function itChecksIfNameIsSimilar(
+        bool $expected,
+        string $name,
+        string $other,
+    ): void {
+        $sut = new Parameter(
+            new Identifier(''),
+            PartialHelper::createParameter(name: $name)
+        );
+        $otherSUT = new Parameter(
+            new Identifier(''),
+            PartialHelper::createParameter(name: $other)
+        );
+
+        self::assertSame($expected, $sut->isSimilar($otherSUT));
+    }
+
     public static function provideInvalidPartialParameters(): Generator
     {
         $parentIdentifier = new Identifier('test');
@@ -307,5 +339,53 @@ class ParameterTest extends TestCase
         yield 'simple - header' => [Style::Simple, In::Header];
 
         yield 'form - cookie' => [Style::Form, In::Cookie];
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: bool,
+     *     1: Partial\Parameter,
+     *     2: Partial\Parameter,
+     * }>
+     */
+    public static function provideParametersThatMayBeIdentical(): Generator
+    {
+        $cases = [
+            'identical name - "param"' => [true, 'param', 'param'],
+            'identical name - "äöü"' => [true, 'äöü', 'äöü'],
+            'similar names - "param" and "Param"' => [false, 'param', 'Param'],
+            'similar names - "äöü" and "Äöü"' => [false, 'äöü', 'Äöü'],
+            'not similar names - "äöü" and "param"' => [false, 'äöü', 'param'],
+        ];
+
+        foreach ($cases as $case => $data) {
+            yield "$case with identical locations" => [
+                $data[0],
+                PartialHelper::createParameter(name: $data[1], in: 'path'),
+                PartialHelper::createParameter(name: $data[2], in: 'path'),
+            ];
+
+            yield "$case with different locations" => [
+                false,
+                PartialHelper::createParameter(name: $data[1], in: 'path'),
+                PartialHelper::createParameter(name: $data[2], in: 'query'),
+            ];
+        }
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: bool,
+     *     1: string,
+     *     2: string,
+     * }>
+     */
+    public static function provideNamesThatMayBeSimilar(): Generator
+    {
+        yield 'identical - "param"' => [false, 'param', 'param'];
+        yield 'identical - "äöü"' => [false, 'äöü', 'äöü'];
+        yield 'similar - "param" and "Param"' => [true, 'param', 'Param'];
+        yield 'similar - "äöü" and "Äöü"' => [true, 'äöü', 'Äöü'];
+        yield 'not similar - "äöü" and "param"' => [false, 'äöü', 'param'];
     }
 }
