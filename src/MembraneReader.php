@@ -21,7 +21,8 @@ final class MembraneReader
         if (empty($this->supportedVersions)) {
             throw CannotSupport::noSupportedVersions();
         }
-
+        
+        /** todo create 3.1 validated objects */
         if ($this->supportedVersions !== [OpenAPIVersion::Version_3_0]) {
             throw CannotSupport::membraneReaderOnlySupportsv30();
         }
@@ -79,11 +80,6 @@ final class MembraneReader
     private function getValidatedObject(CebeSpec\OpenApi $openAPI): OpenAPI
     {
         $this->isVersionSupported($openAPI->openapi) ?: throw CannotSupport::unsupportedVersion($openAPI->openapi);
-
-        /** todo create 3.1 validated objects */
-        if (OpenAPIVersion::fromString($openAPI->openapi) !== OpenAPIVersion::Version_3_0) {
-            throw CannotSupport::membraneReaderOnlySupportsv30();
-        }
 
         $validatedObject = FromCebe::createOpenAPI($openAPI);
 
