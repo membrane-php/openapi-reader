@@ -150,6 +150,48 @@ class OperationTest extends TestCase
         self::assertEquals($expected, $sut->servers);
     }
 
+
+    /**
+     * @param Warning[] $expected
+     */
+    #[Test, DataProvider('provideDuplicateServers')]
+    public function itWarnsAgainstDuplicateServers(
+        array $expected,
+        Partial\Operation $operation,
+    ): void {
+        $sut = new Operation(
+            new Identifier('test'),
+            [],
+            [],
+            Method::GET,
+            $operation
+        );
+
+        self::assertEquals($expected, $sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+    }
+
+
+    #[Test]
+    #[TestDox('The PathItem object will already warn about its own duplicates')]
+    public function itWillNotWarnForDuplicatePathLevelServers(): void
+    {
+        $identifier = new Identifier('test');
+        $server = new Server($identifier, PartialHelper::createServer());
+        $sut = new Operation(
+            $identifier,
+            [$server, $server],
+            [],
+            Method::GET,
+            PartialHelper::createOperation(),
+        );
+
+        self::assertEmpty($sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+    }
+
     public static function provideParameters(): Generator
     {
         $parentIdentifier = new Identifier('/path');
@@ -270,6 +312,40 @@ class OperationTest extends TestCase
             PartialHelper::createServer(url: 'https://server-one.io'),
             PartialHelper::createServer(url: 'https://server-two.co.uk'),
             PartialHelper::createServer(url: 'https://server-three.net')
+        ]);
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: Warning[],
+     *     1: Partial\Operation,
+     * }>
+     */
+    public static function provideDuplicateServers(): Generator
+    {
+        $expectedWarning = new Warning(
+            'Server URLs are not unique',
+            Warning::IDENTICAL_SERVER_URLS
+        );
+
+        $case = fn($servers) => [
+            [$expectedWarning],
+            PartialHelper::createOperation(servers: $servers),
+        ];
+
+        yield 'Completely identical: "/"' => $case([
+            PartialHelper::createServer('/'),
+            PartialHelper::createServer('/'),
+        ]);
+
+        yield 'Completely identical: "https://www.server.net"' => $case([
+            PartialHelper::createServer('https://www.server.net'),
+            PartialHelper::createServer('https://www.server.net'),
+        ]);
+
+        yield 'Identical IF you ignore trailing forward slashes' => $case([
+            PartialHelper::createServer(''),
+            PartialHelper::createServer('/'),
         ]);
     }
 }

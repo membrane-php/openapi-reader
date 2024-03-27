@@ -98,10 +98,42 @@ class PathItemTest extends TestCase
             ])
         );
 
-        self::assertSame(
-            Warning::SIMILAR_NAMES,
-            $sut->getWarnings()->all()[0]->code
+        self::assertNotEmpty($sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+    }
+
+    /**
+     * @param Warning[] $expected
+     */
+    #[Test, DataProvider('provideDuplicateServers')]
+    public function itWarnsAgainstDuplicateServers(
+        array $expected,
+        Partial\PathItem $pathItem,
+    ): void {
+        $sut = new PathItem(new Identifier('test'), [], $pathItem);
+
+        self::assertEquals($expected, $sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+    }
+
+
+    #[Test]
+    #[TestDox('The OpenAPI object will already warn about its own duplicates')]
+    public function itWillNotWarnForDuplicateRootLevelServers(): void
+    {
+        $identifier = new Identifier('test');
+        $server = new Server($identifier, PartialHelper::createServer());
+        $sut = new PathItem(
+            $identifier,
+            [$server, $server],
+            PartialHelper::createPathItem()
         );
+
+        self::assertEmpty($sut
+            ->getWarnings()
+            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
     }
 
     #[Test, DataProvider('provideRedundantMethods')]
@@ -225,6 +257,40 @@ class PathItemTest extends TestCase
         yield 'two names that only differ in case' => ['param', 'PARAM'];
     }
 
+    /**
+     * @return Generator<array{
+     *     0: Warning[],
+     *     1: Partial\PathItem,
+     * }>
+     */
+    public static function provideDuplicateServers(): Generator
+    {
+        $expectedWarning = new Warning(
+            'Server URLs are not unique',
+            Warning::IDENTICAL_SERVER_URLS
+        );
+
+        $case = fn($servers) => [
+            [$expectedWarning],
+            PartialHelper::createPathItem(servers: $servers),
+        ];
+
+        yield 'Completely identical: "/"' => $case([
+            PartialHelper::createServer('/'),
+            PartialHelper::createServer('/'),
+        ]);
+
+        yield 'Completely identical: "https://www.server.net"' => $case([
+            PartialHelper::createServer('https://www.server.net'),
+            PartialHelper::createServer('https://www.server.net'),
+        ]);
+
+        yield 'Identical IF you ignore trailing forward slashes' => $case([
+            PartialHelper::createServer(''),
+            PartialHelper::createServer('/'),
+        ]);
+    }
+
     public static function provideRedundantMethods(): Generator
     {
         yield 'options' => ['options'];
@@ -321,6 +387,6 @@ class PathItemTest extends TestCase
 
     public static function provideServersToWarnAgainst(): Generator
     {
-        
+
     }
 }
