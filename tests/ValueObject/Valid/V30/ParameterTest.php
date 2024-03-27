@@ -6,6 +6,8 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 
 use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\In;
+use Membrane\OpenAPIReader\Style;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -24,6 +26,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Partial\Parameter::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
 #[UsesClass(MediaType::class)]
+#[UsesClass(Partial\Schema::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Identifier::class)]
 #[UsesClass(Validated::class)]
@@ -64,6 +67,21 @@ class ParameterTest extends TestCase
         self::assertSame($expected, $sut->hasMediaType());
 
         self::assertSame($expectedMediaType, $sut->getMediaType());
+    }
+
+    #[Test]
+    #[DataProvider('provideValidStylesPerLocation')]
+    public function itCanHaveAnyValidStylePerLocation(
+        Style $style,
+        In $in,
+    ): void {
+        $sut = new Parameter(
+            new Identifier('test'),
+            PartialHelper::createParameter(in: $in->value, style: $style->value)
+        );
+
+        self::assertSame($style, $sut->style);
+        self::assertSame($in, $sut->in);
     }
 
     public static function provideInvalidPartialParameters(): Generator
@@ -236,5 +254,27 @@ class ParameterTest extends TestCase
                 )]
             )
         ];
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: Style,
+     *     1: In,
+     * }>
+     */
+    public static function provideValidStylesPerLocation(): Generator
+    {
+        yield 'matrix - path' => [Style::Matrix, In::Path];
+        yield 'label - path' => [Style::Label, In::Path];
+        yield 'simple - path' => [Style::Simple, In::Path];
+
+        yield 'form - query' => [Style::Form, In::Query];
+        yield 'spaceDelimited - query' => [Style::SpaceDelimited, In::Query];
+        yield 'pipeDelimited - query' => [Style::PipeDelimited, In::Query];
+        yield 'deepObject - query' => [Style::DeepObject, In::Query];
+
+        yield 'simple - header' => [Style::Simple, In::Header];
+
+        yield 'form - cookie' => [Style::Form, In::Cookie];
     }
 }
