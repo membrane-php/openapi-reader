@@ -6,9 +6,7 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\CannotSupport;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
-use Membrane\OpenAPIReader\In;
 use Membrane\OpenAPIReader\Method;
-use Membrane\OpenAPIReader\Style;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
@@ -65,13 +63,6 @@ final class Operation extends Validated
             $pathParameters,
             $operation->parameters
         );
-
-        $parametersThatCanConflict = array_filter($this->parameters, fn($p) => $this->canParameterConflict($p));
-        if (count($parametersThatCanConflict) > 1) {
-            throw CannotSupport::conflictingParameterStyles(
-                ...array_map(fn($p) => (string)$p->getIdentifier(), $parametersThatCanConflict)
-            );
-        }
     }
 
     /**
@@ -135,6 +126,13 @@ final class Operation extends Validated
                         Warning::SIMILAR_NAMES
                     );
                 }
+
+                if ($parameter->canConflict($otherParameter)) {
+                    throw CannotSupport::conflictingParameterStyles(
+                        (string) $parameter->getIdentifier(),
+                        (string) $otherParameter->getIdentifier(),
+                    );
+                }
             }
         }
 
@@ -163,21 +161,5 @@ final class Operation extends Validated
         }
 
         return array_values($result);
-    }
-
-    private function canParameterConflict(Parameter $parameter): bool
-    {
-        if ($parameter->in !== In::Query) {
-            return false;
-        }
-
-        $canBeObject = $parameter->getSchema()->canItBeAnObject();
-        $canBeArray = $parameter->getSchema()->canItBeAnArray();
-
-        return match ($parameter->style) {
-            Style::Form => $canBeObject && $parameter->explode,
-            Style::PipeDelimited, Style::SpaceDelimited => $canBeObject || $canBeArray,
-            default => false,
-        };
     }
 }

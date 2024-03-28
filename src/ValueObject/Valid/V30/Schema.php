@@ -81,7 +81,7 @@ final class Schema extends Validated
         return $this->canItBeThisType('array');
     }
 
-    private function canItBeThisType(string $type, string ...$types): bool
+    public function canItBeThisType(string $type, string ...$types): bool
     {
         if (in_array($this->type, [$type, ...$types])) {
             return true;

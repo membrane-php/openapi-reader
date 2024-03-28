@@ -122,6 +122,27 @@ final class Parameter extends Validated
             mb_strtolower($this->name) === mb_strtolower($other->name);
     }
 
+    public function canConflict(Parameter $other): bool
+    {
+        if (
+            $this->in !== $other->in || // parameter can be identified by differing location
+            $this->style !== $other->style || // parameter can be identified by differing style
+            $this->in !== In::Query
+        ) {
+            return false;
+        }
+
+        return match ($this->style) {
+            Style::Form => $this->explode && $other->explode && $this
+                    ->getSchema()
+                    ->canItBeThisType('object'),
+            Style::PipeDelimited, Style::SpaceDelimited => $this
+                ->getSchema()
+                ->canItBeThisType('array', 'object'),
+            default => false,
+        };
+    }
+
     private function validateIn(Identifier $identifier, ?string $in): In
     {
         if (is_null($in)) {

@@ -549,38 +549,7 @@ class ReaderTest extends TestCase
             )
         ];
 
-        yield 'operation with spaceDelimited and pipeDelimited exploding arrays' => [
-            json_encode(
-                $openAPI($path(
-                    [],
-                    $operation([
-                        'operationId' => 'test-op',
-                        'parameters' => [
-                            [
-                                'name' => 'param1',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'spaceDelimited',
-                                'schema' => ['type' => 'array'],
-                            ],
-                            [
-                                'name' => 'param2',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'pipeDelimited',
-                                'schema' => ['type' => 'array'],
-                            ]
-                        ],
-                    ])
-                ))
-            ),
-            CannotSupport::conflictingParameterStyles(
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param1(query)"]',
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
-            )
-        ];
-
-        yield 'spaceDelimited exploding in path, pipeDelimited exploding in query' => [
+        yield 'spaceDelimited exploding in path, pipeDelimited exploding in query and spaceDelimited exploding in query' => [
             json_encode(
                 $openAPI($path(
                     [
@@ -601,18 +570,25 @@ class ReaderTest extends TestCase
                                 'explode' => true,
                                 'style' => 'pipeDelimited',
                                 'schema' => ['type' => 'array'],
+                            ],
+                            [
+                                'name' => 'param3',
+                                'in' => 'query',
+                                'explode' => true,
+                                'style' => 'spaceDelimited',
+                                'schema' => ['type' => 'array'],
                             ]
                         ],
                     ])
                 ))
             ),
             CannotSupport::conflictingParameterStyles(
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param3(query)"]',
                 '["test-api(1.0.0)"]["/path"]["param1(query)"]',
             )
         ];
 
-        yield 'form exploding object in path, pipeDelimited exploding in query' => [
+        yield 'form exploding object in path, pipeDelimited object in path, pipeDelimited exploding in query' => [
             json_encode(
                 $openAPI($path(
                     [
@@ -623,12 +599,19 @@ class ReaderTest extends TestCase
                             'style' => 'form',
                             'schema' => ['type' => 'object'],
                         ],
+                        [
+                            'name' => 'param2',
+                            'in' => 'query',
+                            'explode' => true,
+                            'style' => 'pipeDelimited',
+                            'schema' => ['type' => 'object'],
+                        ],
                     ],
                     $operation([
                         'operationId' => 'test-op',
                         'parameters' => [
                             [
-                                'name' => 'param2',
+                                'name' => 'param3',
                                 'in' => 'query',
                                 'explode' => true,
                                 'style' => 'pipeDelimited',
@@ -639,8 +622,8 @@ class ReaderTest extends TestCase
                 ))
             ),
             CannotSupport::conflictingParameterStyles(
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
-                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
+                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param3(query)"]',
+                '["test-api(1.0.0)"]["/path"]["param2(query)"]',
             )
         ];
     }
