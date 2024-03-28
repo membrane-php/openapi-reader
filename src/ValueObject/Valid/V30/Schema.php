@@ -14,10 +14,22 @@ final class Schema extends Validated
 {
     public readonly ?string $type;
     /** @var self[]|null  */
+    /**
+     * This keyword's value MUST be a non-empty array.
+     * @var ?array<int, self>
+     */
     public readonly ?array $allOf;
-    /** @var self[]|null  */
+
+    /**
+     * This keyword's value MUST be a non-empty array.
+     * @var ?array<int, self>
+     */
     public readonly ?array $anyOf;
-    /** @var self[]|null  */
+
+    /**
+     * This keyword's value MUST be a non-empty array.
+     * @var ?array<int, self>
+     */
     public readonly ?array $oneOf;
 
     public function __construct(
