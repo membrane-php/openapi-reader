@@ -56,7 +56,7 @@ class OpenAPITest extends TestCase
         $expected = [new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS)];
         $sut = new OpenAPI(PartialHelper::createOpenAPI(paths: []));
 
-        $actual = $sut->getWarnings()->findByWarningCodes(Warning::EMPTY_PATHS);
+        $actual = $sut->getWarnings()->findByWarningCode(Warning::EMPTY_PATHS);
 
         self::assertEquals($expected, $actual);
     }
@@ -75,7 +75,7 @@ class OpenAPITest extends TestCase
             $expected,
             $sut
                 ->getWarnings()
-                ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS)
+                ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS)
         );
     }
 

@@ -100,7 +100,7 @@ class PathItemTest extends TestCase
 
         self::assertEmpty($sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+            ->findByWarningCode(Warning::SIMILAR_NAMES));
     }
 
     #[Test]
@@ -118,7 +118,7 @@ class PathItemTest extends TestCase
 
         self::assertNotEmpty($sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+            ->findByWarningCode(Warning::SIMILAR_NAMES));
     }
 
     /**
@@ -133,7 +133,7 @@ class PathItemTest extends TestCase
 
         self::assertEquals($expected, $sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
 
 
@@ -151,7 +151,7 @@ class PathItemTest extends TestCase
 
         self::assertEmpty($sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
 
     #[Test, DataProvider('provideRedundantMethods')]

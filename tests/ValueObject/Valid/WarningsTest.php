@@ -64,7 +64,7 @@ class WarningsTest extends TestCase
     ): void {
         $sut = new Warnings(new Identifier('test'), ...$warnings);
 
-        self::assertEquals($expected, $sut->findByWarningCodes(...$codes));
+        self::assertEquals($expected, $sut->findByWarningCode(...$codes));
     }
 
     #[Test, DataProvider('provideWarnings')]
@@ -83,7 +83,7 @@ class WarningsTest extends TestCase
     ): void {
         $sut = new Warnings(new Identifier('test'), ...$warnings);
 
-        self::assertSame($expected, $sut->hasWarningCodes(...$codes));
+        self::assertSame($expected, $sut->hasWarningCode(...$codes));
     }
 
     /**

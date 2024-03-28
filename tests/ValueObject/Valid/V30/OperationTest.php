@@ -169,7 +169,7 @@ class OperationTest extends TestCase
 
         self::assertEquals($expected, $sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
 
 
@@ -189,7 +189,7 @@ class OperationTest extends TestCase
 
         self::assertEmpty($sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::IDENTICAL_SERVER_URLS));
+            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
 
     /**
@@ -211,7 +211,7 @@ class OperationTest extends TestCase
         );
         self::assertNotEmpty($sut
             ->getWarnings()
-            ->findByWarningCodes(Warning::SIMILAR_NAMES));
+            ->findByWarningCode(Warning::SIMILAR_NAMES));
     }
 
     #[Test, TestDox('The PathItem will already warn about its own parameters')]
@@ -230,7 +230,7 @@ class OperationTest extends TestCase
             PartialHelper::createOperation(),
         );
 
-        self::assertEmpty($sut->getWarnings()->findByWarningCodes(Warning::SIMILAR_NAMES));
+        self::assertEmpty($sut->getWarnings()->findByWarningCode(Warning::SIMILAR_NAMES));
     }
 
     public static function provideParameters(): Generator

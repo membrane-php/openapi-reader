@@ -33,7 +33,7 @@ final class Warnings implements HasIdentifier
     }
 
     /** @return Warning[] */
-    public function findByWarningCodes(string $code, string ...$codes): array
+    public function findByWarningCode(string $code, string ...$codes): array
     {
         return array_filter(
             $this->warnings,
@@ -41,9 +41,9 @@ final class Warnings implements HasIdentifier
         );
     }
 
-    public function hasWarningCodes(string $code, string ...$codes): bool
+    public function hasWarningCode(string $code, string ...$codes): bool
     {
-        return !empty($this->findByWarningCodes($code, ...$codes));
+        return !empty($this->findByWarningCode($code, ...$codes));
     }
 
     public function hasWarnings(): bool
