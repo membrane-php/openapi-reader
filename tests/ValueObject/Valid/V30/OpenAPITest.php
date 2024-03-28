@@ -6,9 +6,9 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 
 use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
-use Membrane\OpenAPIReader\Method;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;

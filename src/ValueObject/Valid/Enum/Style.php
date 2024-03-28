@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader;
+namespace Membrane\OpenAPIReader\ValueObject\Valid\Enum;
 
 enum Style: string
 {

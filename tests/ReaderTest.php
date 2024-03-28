@@ -6,7 +6,7 @@ namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Generator;
-use Membrane\OpenAPIReader\{CebeReader, FileFormat, Method, OpenAPIVersion};
+use Membrane\OpenAPIReader\{CebeReader, FileFormat, OpenAPIVersion, ValueObject\Valid\Enum\Method};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\Reader;
