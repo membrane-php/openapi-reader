@@ -7,8 +7,16 @@ namespace Membrane\OpenAPIReader;
 enum Method: string
 {
     case GET = 'get';
-    case POST = 'post';
     case PUT = 'put';
+    case POST = 'post';
     case DELETE = 'delete';
+    case OPTIONS = 'options';
+    case HEAD = 'head';
     case PATCH = 'patch';
+    case TRACE = 'trace';
+
+    public function isRedundant(): bool
+    {
+        return in_array($this, [Method::HEAD, Method::OPTIONS, Method::TRACE]);
+    }
 }
