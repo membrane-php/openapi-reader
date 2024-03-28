@@ -6,8 +6,10 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 
 use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
@@ -20,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Schema::class)]
 #[CoversClass(Partial\Schema::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
+#[UsesClass(Type::class)]
 #[UsesClass(Identifier::class)]
 #[UsesClass(Validated::class)]
 class SchemaTest extends TestCase
@@ -36,7 +39,7 @@ class SchemaTest extends TestCase
     }
 
     /**
-     * @param string[] $types
+     * @param Type[] $types
      */
     #[Test, DataProvider('provideSchemasToCheckTypes')]
     public function itKnowsWhatTypeItCanBe(
@@ -85,81 +88,79 @@ class SchemaTest extends TestCase
     /**
      * @return \Generator<array{
      *     0: bool,
-     *     1: string[],
+     *     1: Type[],
      *     2: Partial\Schema
      * }>
      */
     public static function provideSchemasToCheckTypes(): Generator
     {
-        $types = ['boolean', 'number', 'integer', 'string', 'array', 'object'];
-
-        foreach ($types as $desired) {
-            yield "it can always be $desired for empty schemas" => [
+        foreach (Type::casesSupportedByVersion(OpenAPIVersion::Version_3_0) as $desired) {
+            yield "it can always be $desired->value for empty schemas" => [
               true,
               [$desired],
               PartialHelper::createSchema(),
             ];
 
-            foreach ($types as $type) {
-                yield "can it be $desired? top level type: $type" => [
+            foreach (Type::casesSupportedByVersion(OpenAPIVersion::Version_3_0) as $type) {
+                yield "can it be $desired->value? top level type: $type->value" => [
                     $desired === $type,
                     [$desired],
-                    PartialHelper::createSchema(type: $type)
+                    PartialHelper::createSchema(type: $type->value)
                 ];
 
-                yield "can it be $desired? allOf MUST be $type" => [
+                yield "can it be $desired->value? allOf MUST be $type->value" => [
                     $desired === $type,
                     [$desired],
                     PartialHelper::createSchema(allOf: [
-                        PartialHelper::createSchema(type: $type),
+                        PartialHelper::createSchema(type: $type->value),
                     ])
                 ];
 
-                yield "can it be $desired? anyOf MUST be $type" => [
+                yield "can it be $desired->value? anyOf MUST be $type->value" => [
                     $desired === $type,
                     [$desired],
                     PartialHelper::createSchema(anyOf: [
-                        PartialHelper::createSchema(type: $type),
+                        PartialHelper::createSchema(type: $type->value),
                     ])
                 ];
 
-                yield "can it be $desired? oneOf MUST be $type" => [
+                yield "can it be $desired->value? oneOf MUST be $type->value" => [
                     $desired === $type,
                     [$desired],
                     PartialHelper::createSchema(oneOf: [
-                        PartialHelper::createSchema(type: $type),
+                        PartialHelper::createSchema(type: $type->value),
                     ])
                 ];
 
-                if ($type !== 'string') {
-                    yield "can it be $desired? anyOf MAY be $type|string" => [
-                        in_array($desired, [$type, 'string'], true),
+                if ($type !== Type::String) {
+                    yield "can it be $desired->value? anyOf MAY be $type->value|string" => [
+                        in_array($desired->value, [$type->value, 'string'], true),
                         [$desired],
                         PartialHelper::createSchema(anyOf: [
                             PartialHelper::createSchema(type: 'string'),
-                            PartialHelper::createSchema(type: $type),
+                            PartialHelper::createSchema(type: $type->value),
                         ])
                     ];
                 }
 
-                if ($type !== 'boolean') {
-                    yield "can it be $desired? oneOf MAY be $type|boolean" => [
-                        in_array($desired, [$type, 'boolean'], true),
+                if ($type->value !== Type::Boolean) {
+                    yield "can it be $desired->value? oneOf MAY be $type->value|boolean" => [
+                        in_array($desired->value, [$type->value, 'boolean'], true),
                         [$desired],
                         PartialHelper::createSchema(oneOf: [
-                            PartialHelper::createSchema(type: $type),
                             PartialHelper::createSchema(type: 'boolean'),
+                            PartialHelper::createSchema(type: $type->value),
                         ])
                     ];
                 }
 
-                if ($type !== 'integer') {
-                    yield "can it be $desired? allOf contains oneOf that may be $type|integer" => [
-                        in_array($desired, [$type, 'integer'], true),
+                if ($type !== Type::Integer) {
+                    yield "can it be $desired->value? allOf contains oneOf that may be $type->value|integer" => [
+                        in_array($desired->value, [$type->value, 'integer'], true),
                         [$desired],
                         PartialHelper::createSchema(allOf: [
                             PartialHelper::createSchema(oneOf: [
-                                PartialHelper::createSchema(type: $type),
+                                PartialHelper::createSchema(type: $type->value),
                                 PartialHelper::createSchema(type: 'integer')
                             ]),
                         ])

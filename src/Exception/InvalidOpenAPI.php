@@ -280,6 +280,17 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function invalidType(Identifier $identifier, string $type): self
+    {
+        $message = <<<TEXT
+            $identifier
+            "type" MUST be "boolean", "object", "array", "number", "string", or "integer".
+            "$type" is invalid.
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function failedCebeValidation(string ...$errors): self
     {
         $message = sprintf("OpenAPI is invalid for the following reasons:\n\t- %s", implode("\n\t- ", $errors));
@@ -290,7 +301,7 @@ final class InvalidOpenAPI extends RuntimeException
     {
         $message = <<<TEXT
             $identifier
-            'complex schemas MUST have atleast one sub-schema
+            complex schemas MUST have atleast one sub-schema
             TEXT;
 
         return new self($message);

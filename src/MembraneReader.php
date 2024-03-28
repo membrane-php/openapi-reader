@@ -21,7 +21,7 @@ final class MembraneReader
         if (empty($this->supportedVersions)) {
             throw CannotSupport::noSupportedVersions();
         }
-        
+
         /** todo create 3.1 validated objects */
         if ($this->supportedVersions !== [OpenAPIVersion::Version_3_0]) {
             throw CannotSupport::membraneReaderOnlySupportsv30();

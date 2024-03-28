@@ -10,6 +10,7 @@ use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\In;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\MediaType;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
@@ -26,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Partial\Parameter::class)] // DTO
 #[CoversClass(InvalidOpenAPI::class)]
 #[UsesClass(MediaType::class)]
+#[UsesClass(Type::class)]
 #[UsesClass(Partial\Schema::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Identifier::class)]

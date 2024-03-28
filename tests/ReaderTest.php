@@ -6,7 +6,8 @@ namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Generator;
-use Membrane\OpenAPIReader\{CebeReader, FileFormat, OpenAPIVersion, ValueObject\Valid\Enum\Method};
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
+use Membrane\OpenAPIReader\{CebeReader, FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\Reader;
@@ -22,7 +23,7 @@ use TypeError;
 #[CoversClass(Reader::class)]
 #[CoversClass(CebeReader::class)]
 #[CoversClass(CannotRead::class), CoversClass(CannotSupport::class), CoversClass(InvalidOpenAPI::class)]
-#[UsesClass(FileFormat::class), UsesClass(Method::class), UsesClass(OpenAPIVersion::class)]
+#[UsesClass(FileFormat::class), UsesClass(Method::class), UsesClass(OpenAPIVersion::class), UsesClass(Valid\Enum\Type::class)]
 #[UsesClass(FromCebe::class)]
 #[UsesClass(Identifier::class)]
 #[UsesClass(Partial\OpenAPI::class)]

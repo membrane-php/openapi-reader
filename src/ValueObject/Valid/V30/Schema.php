@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -12,8 +13,12 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 
 final class Schema extends Validated
 {
-    public readonly ?string $type;
-    /** @var self[]|null  */
+    /**
+     * This keyword's value  MUST be one of the following:
+     * "boolean", "object", "array", "number", "string", or "integer"
+     */
+    public readonly ?Type $type;
+
     /**
      * This keyword's value MUST be a non-empty array.
      * @var ?array<int, self>
@@ -38,7 +43,7 @@ final class Schema extends Validated
     ) {
         parent::__construct($identifier);
 
-        $this->type = $schema->type ?? null;
+        $this->type = $this->validateType($this->getIdentifier(), $schema->type);
 
         if (isset($schema->allOf)) {
             if (empty($schema->allOf)) {
@@ -68,6 +73,18 @@ final class Schema extends Validated
         }
     }
 
+    private function validateType(Identifier $identifier, ?string $type): ?Type
+    {
+        if (is_null($type)) {
+            return null;
+        }
+
+        return Type::tryFromCasesSupportedByVersion(
+            OpenAPIVersion::Version_3_0,
+            $type
+        ) ?? throw InvalidOpenAPI::invalidType($identifier, $type);
+    }
+
     /**
      * @param Partial\Schema[] $subSchemas
      * @return self[]
@@ -84,26 +101,51 @@ final class Schema extends Validated
         return $result;
     }
 
-    public function canItBeAnObject(): bool
+    public function canItBeThisType(Type $type, Type ...$types): bool
     {
-        return $this->canItBeThisType('object');
-    }
+        $possibilities = array_map(fn($t) => Type::from($t), $this->whatTypesCanItBe());
 
-    public function canItBeAnArray(): bool
-    {
-        return $this->canItBeThisType('array');
-    }
-
-    public function canItBeThisType(string $type, string ...$types): bool
-    {
-        if (in_array($this->type, [$type, ...$types])) {
-            return true;
+        foreach ([$type, ...$types] as $typeItCouldBe) {
+            if (in_array($typeItCouldBe, $possibilities)) {
+                return true;
+            }
         }
 
-        return array_reduce(
-            [...($this->allOf ?? []), ...($this->anyOf ?? []), ...($this->oneOf ?? [])],
-            fn($v, Schema $schema) => $v || $schema->canItBeThisType($type, ...$types),
-            false
-        );
+        return false;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function whatTypesCanItBe(): array
+    {
+        $possibilities = [Type::valuesSupportedByVersion(OpenAPIVersion::Version_3_0)];
+
+        if ($this->type !== null) {
+            $possibilities[] = [$this->type->value];
+        }
+
+        if (!empty($this->allOf)) {
+            $possibilities[] = array_intersect(...array_map(
+                fn($s) => $s->whatTypesCanItBe(),
+                $this->allOf,
+            ));
+        }
+
+        if (!empty($this->anyOf)) {
+            $possibilities[] = array_unique(array_merge(...array_map(
+                fn($s) => $s->whatTypesCanItBe(),
+                $this->anyOf
+            )));
+        }
+
+        if (!empty($this->oneOf)) {
+            $possibilities[] = array_unique(array_merge(...array_map(
+                fn($s) => $s->whatTypesCanItBe(),
+                $this->oneOf
+            )));
+        }
+
+        return array_intersect(...$possibilities);
     }
 }

@@ -8,6 +8,7 @@ use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\In;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 
@@ -135,10 +136,10 @@ final class Parameter extends Validated
         return match ($this->style) {
             Style::Form => $this->explode && $other->explode && $this
                     ->getSchema()
-                    ->canItBeThisType('object'),
+                    ->canItBeThisType(Type::Object),
             Style::PipeDelimited, Style::SpaceDelimited => $this
                 ->getSchema()
-                ->canItBeThisType('array', 'object'),
+                ->canItBeThisType(Type::Array, Type::Object),
             default => false,
         };
     }
