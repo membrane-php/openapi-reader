@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\Tests;
+namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\Enum;
 
 use Generator;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
