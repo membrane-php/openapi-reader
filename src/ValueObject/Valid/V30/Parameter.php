@@ -69,7 +69,7 @@ final class Parameter extends Validated
             $parameter->style,
         );
 
-        $this->explode = $parameter->explode ?? $this->defaultExplode($this->style);
+        $this->explode = $parameter->explode ?? $this->style->explodeDefault();
 
         if (isset($parameter->schema) !== empty($parameter->content)) {
             throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
@@ -90,6 +90,8 @@ final class Parameter extends Validated
                 $parameter->content
             );
         }
+
+//        if ($this->getSchema()->canItBeThisType()
     }
 
     public function getSchema(): Schema
@@ -134,12 +136,13 @@ final class Parameter extends Validated
         }
 
         return match ($this->style) {
-            Style::Form => $this->explode && $other->explode && $this
-                    ->getSchema()
-                    ->canItBeThisType(Type::Object),
-            Style::PipeDelimited, Style::SpaceDelimited => $this
-                ->getSchema()
-                ->canItBeThisType(Type::Array, Type::Object),
+            Style::Form =>
+                $this->explode &&
+                $other->explode &&
+                $this->getSchema()->canBe(Type::Object),
+            Style::PipeDelimited, Style::SpaceDelimited =>
+                $this->getSchema()->canBe(Type::Array) ||
+                $this->getSchema()->canBe(Type::Object),
             default => false,
         };
     }
@@ -172,44 +175,16 @@ final class Parameter extends Validated
         ?string $style
     ): Style {
         if (is_null($style)) {
-            return $this->defaultStyle($in);
+            return Style::defaultCaseIn($in);
         }
 
         $style = Style::tryFrom($style) ??
             throw InvalidOpenAPI::parameterInvalidStyle($identifier);
 
-        if (!$this->styleIsValidForLocation($in, $style)) {
+        in_array($style, Style::casesIn($in)) ?:
             throw InvalidOpenAPI::parameterIncompatibleStyle($identifier);
-        }
 
         return $style;
-    }
-
-    private function defaultStyle(In $in): Style
-    {
-        return match ($in) {
-            In::Path, In::Header => Style::Simple,
-            In::Query, In::Cookie => Style::Form,
-        };
-    }
-
-    private function defaultExplode(Style $style): bool
-    {
-        return $style === Style::Form;
-    }
-
-    private function styleIsValidForLocation(In $in, Style $style): bool
-    {
-        return in_array(
-            $style,
-            match ($in) {
-                In::Path => [Style::Matrix, Style::Label, Style::Simple],
-                In::Query => [Style::Form, Style::SpaceDelimited, Style::PipeDelimited, Style::DeepObject],
-                In::Header => [Style::Simple],
-                In::Cookie => [Style::Form],
-            },
-            true
-        );
     }
 
     /**

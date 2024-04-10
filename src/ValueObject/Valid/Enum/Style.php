@@ -13,4 +13,41 @@ enum Style: string
     case SpaceDelimited = 'spaceDelimited';
     case PipeDelimited = 'pipeDelimited';
     case DeepObject = 'deepObject';
+
+    public static function defaultCaseIn(In $in): self
+    {
+        return match ($in) {
+            In::Path, In::Header => self::Simple,
+            In::Query, In::Cookie => self::Form,
+        };
+    }
+
+    /** @return self[] */
+    public static function casesIn(In $in): array
+    {
+        return match ($in) {
+            In::Path => [
+                self::Matrix,
+                self::Label,
+                self::Simple
+            ],
+            In::Query => [
+                self::Form,
+                self::SpaceDelimited,
+                self::PipeDelimited,
+                self::DeepObject
+            ],
+            In::Header => [
+                self::Simple,
+            ],
+            In::Cookie => [
+                self::Form,
+            ]
+        };
+    }
+
+    public function explodeDefault(): bool
+    {
+        return $this === self::Form;
+    }
 }

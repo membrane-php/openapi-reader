@@ -7,6 +7,7 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\MediaType;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Identifier::class)]
 #[UsesClass(Partial\Schema::class)]
 #[UsesClass(Schema::class)]
+#[UsesClass(Type::class)]
 class MediaTypeTest extends TestCase
 {
     #[Test]

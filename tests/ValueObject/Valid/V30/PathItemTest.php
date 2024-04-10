@@ -9,6 +9,8 @@ use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Operation;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Parameter;
@@ -41,6 +43,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Warning::class)]
 #[UsesClass(Warnings::class)]
 #[UsesClass(Method::class)]
+#[UsesClass(Type::class)]
+#[UsesClass(Style::class)]
 class PathItemTest extends TestCase
 {
     /**

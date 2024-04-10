@@ -38,18 +38,16 @@ class SchemaTest extends TestCase
         new Schema($identifier, $partialSchema);
     }
 
-    /**
-     * @param Type[] $types
-     */
+
     #[Test, DataProvider('provideSchemasToCheckTypes')]
     public function itKnowsWhatTypeItCanBe(
         bool $expected,
-        array $types,
+        Type $type,
         Partial\Schema $partialSchema,
     ): void {
         $sut = new Schema(new Identifier(''), $partialSchema);
 
-        self::assertSame($expected, $sut->canItBeThisType(...$types));
+        self::assertSame($expected, $sut->canBe($type));
     }
 
     public static function provideInvalidComplexSchemas(): Generator
@@ -88,29 +86,29 @@ class SchemaTest extends TestCase
     /**
      * @return \Generator<array{
      *     0: bool,
-     *     1: Type[],
+     *     1: Type,
      *     2: Partial\Schema
      * }>
      */
     public static function provideSchemasToCheckTypes(): Generator
     {
-        foreach (Type::casesSupportedByVersion(OpenAPIVersion::Version_3_0) as $desired) {
+        foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $desired) {
             yield "it can always be $desired->value for empty schemas" => [
               true,
-              [$desired],
+              $desired,
               PartialHelper::createSchema(),
             ];
 
-            foreach (Type::casesSupportedByVersion(OpenAPIVersion::Version_3_0) as $type) {
+            foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
                 yield "can it be $desired->value? top level type: $type->value" => [
                     $desired === $type,
-                    [$desired],
+                    $desired,
                     PartialHelper::createSchema(type: $type->value)
                 ];
 
                 yield "can it be $desired->value? allOf MUST be $type->value" => [
                     $desired === $type,
-                    [$desired],
+                    $desired,
                     PartialHelper::createSchema(allOf: [
                         PartialHelper::createSchema(type: $type->value),
                     ])
@@ -118,7 +116,7 @@ class SchemaTest extends TestCase
 
                 yield "can it be $desired->value? anyOf MUST be $type->value" => [
                     $desired === $type,
-                    [$desired],
+                    $desired,
                     PartialHelper::createSchema(anyOf: [
                         PartialHelper::createSchema(type: $type->value),
                     ])
@@ -126,7 +124,7 @@ class SchemaTest extends TestCase
 
                 yield "can it be $desired->value? oneOf MUST be $type->value" => [
                     $desired === $type,
-                    [$desired],
+                    $desired,
                     PartialHelper::createSchema(oneOf: [
                         PartialHelper::createSchema(type: $type->value),
                     ])
@@ -135,7 +133,7 @@ class SchemaTest extends TestCase
                 if ($type !== Type::String) {
                     yield "can it be $desired->value? anyOf MAY be $type->value|string" => [
                         in_array($desired->value, [$type->value, 'string'], true),
-                        [$desired],
+                        $desired,
                         PartialHelper::createSchema(anyOf: [
                             PartialHelper::createSchema(type: 'string'),
                             PartialHelper::createSchema(type: $type->value),
@@ -146,7 +144,7 @@ class SchemaTest extends TestCase
                 if ($type->value !== Type::Boolean) {
                     yield "can it be $desired->value? oneOf MAY be $type->value|boolean" => [
                         in_array($desired->value, [$type->value, 'boolean'], true),
-                        [$desired],
+                        $desired,
                         PartialHelper::createSchema(oneOf: [
                             PartialHelper::createSchema(type: 'boolean'),
                             PartialHelper::createSchema(type: $type->value),
@@ -157,7 +155,7 @@ class SchemaTest extends TestCase
                 if ($type !== Type::Integer) {
                     yield "can it be $desired->value? allOf contains oneOf that may be $type->value|integer" => [
                         in_array($desired->value, [$type->value, 'integer'], true),
-                        [$desired],
+                        $desired,
                         PartialHelper::createSchema(allOf: [
                             PartialHelper::createSchema(oneOf: [
                                 PartialHelper::createSchema(type: $type->value),

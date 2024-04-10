@@ -39,6 +39,11 @@ final class Warning
     public const IMPOSSIBLE_DEFAULT = 'impossible-default';
 
     /**
+     * Schema: No value, of any data type, can satisfy this schema
+     */
+    public const IMPOSSIBLE_SCHEMA = 'impossible-schema';
+
+    /**
      * Server: paths begin with a forward slash, so servers need not end in one
      * - membrane will ignore trailing forward slashes on server urls
      */

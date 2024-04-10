@@ -19,9 +19,8 @@ enum Type: string
     case Object = 'object';
 
     /** @return self[] */
-    public static function casesSupportedByVersion(
-        OpenAPIVersion $version
-    ): array {
+    public static function casesForVersion(OpenAPIVersion $version): array
+    {
         return match ($version) {
             OpenAPIVersion::Version_3_0 => [
                 Type::Boolean,
@@ -44,22 +43,18 @@ enum Type: string
     }
 
     /** @return string[] */
-    public static function valuesSupportedByVersion(
-        OpenAPIVersion $version
-    ): array {
-        return array_map(
-            fn($t) => $t->value,
-            self::casesSupportedByVersion($version)
-        );
+    public static function valuesForVersion(OpenAPIVersion $version): array
+    {
+        return array_map(fn($t) => $t->value, self::casesForVersion($version));
     }
 
-    public static function tryFromCasesSupportedByVersion(
+    public static function tryFromVersion(
         OpenAPIVersion $version,
         string $type
     ): ?self {
         $type = self::tryFrom($type);
 
-        return in_array($type, self::casesSupportedByVersion($version)) ?
+        return in_array($type, self::casesForVersion($version)) ?
             $type :
             null;
     }

@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(InvalidOpenAPI::class)]
 #[UsesClass(MediaType::class)]
 #[UsesClass(Type::class)]
+#[UsesClass(Style::class)]
 #[UsesClass(Partial\Schema::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Identifier::class)]
@@ -449,6 +450,8 @@ class ParameterTest extends TestCase
         yield 'identical - "äöü"' => [false, 'äöü', 'äöü'];
         yield 'similar - "param" and "Param"' => [true, 'param', 'Param'];
         yield 'similar - "äöü" and "Äöü"' => [true, 'äöü', 'Äöü'];
+        yield 'similar - "Äöü" and "äöü"' => [true, 'Äöü', 'äöü'];
         yield 'not similar - "äöü" and "param"' => [false, 'äöü', 'param'];
+        yield 'not similar - "param" and "äöü"' => [false, 'param', 'äöü'];
     }
 }

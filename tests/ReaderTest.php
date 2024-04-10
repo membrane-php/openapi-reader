@@ -6,7 +6,6 @@ namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Generator;
-use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
 use Membrane\OpenAPIReader\{CebeReader, FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
@@ -14,6 +13,8 @@ use Membrane\OpenAPIReader\Reader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
@@ -23,7 +24,11 @@ use TypeError;
 #[CoversClass(Reader::class)]
 #[CoversClass(CebeReader::class)]
 #[CoversClass(CannotRead::class), CoversClass(CannotSupport::class), CoversClass(InvalidOpenAPI::class)]
-#[UsesClass(FileFormat::class), UsesClass(Method::class), UsesClass(OpenAPIVersion::class), UsesClass(Valid\Enum\Type::class)]
+#[UsesClass(FileFormat::class)]
+#[UsesClass(OpenAPIVersion::class)]
+#[UsesClass(Valid\Enum\Type::class)]
+#[UsesClass(Method::class)]
+#[UsesClass(Style::class)]
 #[UsesClass(FromCebe::class)]
 #[UsesClass(Identifier::class)]
 #[UsesClass(Partial\OpenAPI::class)]

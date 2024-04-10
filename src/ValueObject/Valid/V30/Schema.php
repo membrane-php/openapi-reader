@@ -10,32 +10,38 @@ use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
 final class Schema extends Validated
 {
     /**
-     * This keyword's value  MUST be one of the following:
+     * If specified, this keyword's value  MUST be one of the following:
      * "boolean", "object", "array", "number", "string", or "integer"
      */
     public readonly ?Type $type;
 
     /**
-     * This keyword's value MUST be a non-empty array.
+     * If specified, this keyword's value MUST be a non-empty array.
      * @var ?array<int, self>
      */
     public readonly ?array $allOf;
 
     /**
-     * This keyword's value MUST be a non-empty array.
+     * If specified, this keyword's value MUST be a non-empty array.
      * @var ?array<int, self>
      */
     public readonly ?array $anyOf;
 
     /**
-     * This keyword's value MUST be a non-empty array.
+     * If specified, this keyword's value MUST be a non-empty array.
      * @var ?array<int, self>
      */
     public readonly ?array $oneOf;
+
+    /**
+     * @var Type[]
+     */
+    private readonly array $typesItCanBe;
 
     public function __construct(
         Identifier $identifier,
@@ -71,6 +77,18 @@ final class Schema extends Validated
         } else {
             $this->oneOf = null;
         }
+
+        $this->typesItCanBe = array_map(
+            fn($t) => Type::from($t),
+            $this->typesItCanBe()
+        );
+
+        if (empty($this->typesItCanBe)) {
+            $this->addWarning(
+                'no data type can satisfy this schema',
+                Warning::IMPOSSIBLE_SCHEMA
+            );
+        }
     }
 
     private function validateType(Identifier $identifier, ?string $type): ?Type
@@ -79,7 +97,7 @@ final class Schema extends Validated
             return null;
         }
 
-        return Type::tryFromCasesSupportedByVersion(
+        return Type::tryFromVersion(
             OpenAPIVersion::Version_3_0,
             $type
         ) ?? throw InvalidOpenAPI::invalidType($identifier, $type);
@@ -101,25 +119,25 @@ final class Schema extends Validated
         return $result;
     }
 
-    public function canItBeThisType(Type $type, Type ...$types): bool
+    public function canBe(Type $type): bool
     {
-        $possibilities = array_map(fn($t) => Type::from($t), $this->whatTypesCanItBe());
-
-        foreach ([$type, ...$types] as $typeItCouldBe) {
-            if (in_array($typeItCouldBe, $possibilities)) {
-                return true;
-            }
-        }
-
-        return false;
+        return in_array($type, $this->typesItCanBe);
     }
 
-    /**
-     * @return string[]
-     */
-    public function whatTypesCanItBe(): array
+    public function canOnlyBe(Type $type): bool
     {
-        $possibilities = [Type::valuesSupportedByVersion(OpenAPIVersion::Version_3_0)];
+        return $this->typesItCanBe === [$type];
+    }
+
+    public function canOnlyBePrimitive(): bool
+    {
+        return !$this->canBe(Type::Array) && !$this->canBe(Type::Object);
+    }
+
+    /** @return string[] */
+    private function typesItCanBe(): array
+    {
+        $possibilities = [Type::valuesForVersion(OpenAPIVersion::Version_3_0)];
 
         if ($this->type !== null) {
             $possibilities[] = [$this->type->value];
@@ -127,21 +145,21 @@ final class Schema extends Validated
 
         if (!empty($this->allOf)) {
             $possibilities[] = array_intersect(...array_map(
-                fn($s) => $s->whatTypesCanItBe(),
+                fn($s) => $s->typesItCanBe(),
                 $this->allOf,
             ));
         }
 
         if (!empty($this->anyOf)) {
             $possibilities[] = array_unique(array_merge(...array_map(
-                fn($s) => $s->whatTypesCanItBe(),
+                fn($s) => $s->typesItCanBe(),
                 $this->anyOf
             )));
         }
 
         if (!empty($this->oneOf)) {
             $possibilities[] = array_unique(array_merge(...array_map(
-                fn($s) => $s->whatTypesCanItBe(),
+                fn($s) => $s->typesItCanBe(),
                 $this->oneOf
             )));
         }

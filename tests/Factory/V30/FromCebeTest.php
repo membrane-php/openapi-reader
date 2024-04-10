@@ -10,6 +10,7 @@ use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\MediaType;
@@ -52,6 +53,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Identifier::class)]
 #[UsesClass(Method::class)]
 #[UsesClass(Type::class)]
+#[UsesClass(Style::class)]
 class FromCebeTest extends TestCase
 {
     #[Test, DataProvider('provideCebeOpenAPIObjects')]
