@@ -39,8 +39,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Method::class)]
 class OpenAPITest extends TestCase
 {
-    #[Test, DataProvider('providePartialOpenAPIs')]
-    public function itValidatesOpenAPIObjects(
+    #[Test, DataProvider('provideInvalidPartialObjects')]
+    public function itCannotBeInvalid(
         InvalidOpenAPI $expected,
         Partial\OpenAPI $partialOpenAPI,
     ): void {
@@ -104,7 +104,7 @@ class OpenAPITest extends TestCase
      *     1: Partial\OpenAPI,
      * }>
      */
-    public static function providePartialOpenAPIs(): Generator
+    public static function provideInvalidPartialObjects(): Generator
     {
         $title = 'Test OpenAPI';
         $version = '1.0.0';

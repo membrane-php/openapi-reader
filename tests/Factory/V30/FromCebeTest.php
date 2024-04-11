@@ -6,6 +6,7 @@ namespace Membrane\OpenAPIReader\Tests\Factory\V30;
 
 use cebe\openapi\spec as Cebe;
 use Generator;
+use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
 use Membrane\OpenAPIReader\ValueObject\Partial;
@@ -31,6 +32,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(FromCebe::class)]
+#[UsesClass(InvalidOpenAPI::class)]
 #[UsesClass(OpenAPI::class)]
 #[UsesClass(Partial\OpenAPI::class)]
 #[UsesClass(Server::class)]
@@ -56,15 +58,25 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Style::class)]
 class FromCebeTest extends TestCase
 {
-    #[Test, DataProvider('provideCebeOpenAPIObjects')]
-    public function itConstructsValidOpenAPIObjects(
+    #[Test, DataProvider('provideValidSpecs')]
+    public function itConstructsValidOpenAPI(
         OpenAPI $expected,
         Cebe\OpenApi $openApi,
     ): void {
         self::assertEquals($expected, FromCebe::createOpenAPI($openApi));
     }
 
-    public static function provideCebeOpenAPIObjects(): Generator
+    #[Test, DataProvider('provideInvalidSpecs')]
+    public function itCannotConstructInvalidOpenAPI(
+        InvalidOpenAPI $expected,
+        Cebe\OpenApi $openApi,
+    ): void {
+        self::expectExceptionObject($expected);
+
+        FromCebe::createOpenAPI($openApi);
+    }
+
+    public static function provideValidSpecs(): Generator
     {
         yield 'minimal OpenAPI' => [
             OpenAPIProvider::minimalV30MembraneObject(),
@@ -74,6 +86,25 @@ class FromCebeTest extends TestCase
         yield 'detailed OpenAPI' => [
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30CebeObject(),
+        ];
+    }
+
+    public static function provideInvalidSpecs(): Generator
+    {
+        yield 'no title' => [
+            InvalidOpenAPI::missingInfo(),
+            new Cebe\OpenApi([
+                'openapi' => '3.0.0',
+                'info' => ['version' => '0.1']
+            ])
+        ];
+
+        yield 'no version' => [
+            InvalidOpenAPI::missingInfo(),
+            new Cebe\OpenApi([
+                'openapi' => '3.0.0',
+                'info' => ['title' => 'Slapdash API']
+            ])
         ];
     }
 }
