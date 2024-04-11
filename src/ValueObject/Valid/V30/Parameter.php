@@ -69,7 +69,7 @@ final class Parameter extends Validated
             $parameter->style,
         );
 
-        $this->explode = $parameter->explode ?? $this->style->explodeDefault();
+        $this->explode = $parameter->explode ?? $this->style->defaultExplode();
 
         if (isset($parameter->schema) !== empty($parameter->content)) {
             throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);

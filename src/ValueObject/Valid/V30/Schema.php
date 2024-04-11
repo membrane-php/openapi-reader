@@ -41,7 +41,7 @@ final class Schema extends Validated
     /**
      * @var Type[]
      */
-    private readonly array $typesItCanBe;
+    public readonly array $typesItCanBe;
 
     public function __construct(
         Identifier $identifier,
@@ -126,7 +126,7 @@ final class Schema extends Validated
 
     public function canOnlyBe(Type $type): bool
     {
-        return $this->typesItCanBe === [$type];
+        return [$type] === $this->typesItCanBe;
     }
 
     public function canOnlyBePrimitive(): bool
@@ -164,6 +164,6 @@ final class Schema extends Validated
             )));
         }
 
-        return array_intersect(...$possibilities);
+        return array_values(array_intersect(...$possibilities));
     }
 }

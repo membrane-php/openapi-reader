@@ -46,7 +46,7 @@ enum Style: string
         };
     }
 
-    public function explodeDefault(): bool
+    public function defaultExplode(): bool
     {
         return $this === self::Form;
     }
