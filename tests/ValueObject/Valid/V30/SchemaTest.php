@@ -88,6 +88,20 @@ class SchemaTest extends TestCase
         );
     }
 
+    #[Test]
+    #[DataProvider('provideSchemasAcceptNoTypes')]
+    public function itWarnsAgainstImpossibleSchemas(
+        bool $expected,
+        Partial\Schema $schema,
+    ): void {
+        $sut = new Schema(new Identifier(''), $schema);
+
+        self::assertSame(
+            $expected,
+            $sut->getWarnings()->hasWarningCode(Warning::IMPOSSIBLE_SCHEMA)
+        );
+    }
+
     public static function provideInvalidComplexSchemas(): Generator
     {
         $xOfs = [
@@ -125,7 +139,7 @@ class SchemaTest extends TestCase
      * @return \Generator<array{
      *     0: Type[],
      *     1: Type,
-     *     2: Partial\Schema
+     *     2: Partial\Schema,
      * }>
      */
     public static function provideSchemasToCheckTypes(): Generator
@@ -243,6 +257,22 @@ class SchemaTest extends TestCase
                     ];
                 }
             }
+        }
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: bool,
+     *     1: Partial\Schema
+     * }>
+     */
+    public static function provideSchemasAcceptNoTypes(): Generator
+    {
+        foreach (self::provideSchemasToCheckTypes() as $case => $dataSet) {
+            yield $case => [
+              empty($dataSet[0]),
+              $dataSet[2]
+            ];
         }
     }
 }
