@@ -192,6 +192,8 @@ class ParameterTest extends TestCase
     #[DataProvider('provideParametersThatAreNotInQuery')]
     #[DataProvider('provideParametersWithDifferentStyles')]
     #[DataProvider('provideParametersThatMustBePrimitiveType')]
+    #[DataProvider('provideParametersWithDifferentExplodes')]
+    #[DataProvider('provideParametersInQueryThatDoNotConflict')]
     #[DataProvider('provideParametersThatConflict')]
     public function itChecksIfItCanConflict(
         bool $expected,
@@ -587,6 +589,62 @@ class ParameterTest extends TestCase
      *     2: Partial\Parameter,
      * }>
      */
+    public static function provideParametersWithDifferentExplodes(): Generator
+    {
+        $stylesWhereDifferentExplodesMatter = [Style::Form];
+
+        foreach ($stylesWhereDifferentExplodesMatter as $style) {
+            yield "style:$style->value" => [
+                false,
+                PartialHelper::createParameter(
+                    in: In::Query->value,
+                    style: $style->value,
+                    explode: true,
+                ),
+                PartialHelper::createParameter(
+                    in: In::Query->value,
+                    style: $style->value,
+                    explode: false,
+                ),
+            ];
+        }
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: bool,
+     *     1: Partial\Parameter,
+     *     2: Partial\Parameter,
+     * }>
+     */
+    public static function provideParametersInQueryThatDoNotConflict(): Generator
+    {
+        $queryStylesThatCannotConflict = [Style::DeepObject];
+
+        foreach ($queryStylesThatCannotConflict as $style) {
+            yield "style:$style->value" => [
+                false,
+                PartialHelper::createParameter(
+                    in: In::Query->value,
+                    style: $style->value,
+                    explode: true,
+                ),
+                PartialHelper::createParameter(
+                    in: In::Query->value,
+                    style: $style->value,
+                    explode: true,
+                ),
+            ];
+        }
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: bool,
+     *     1: Partial\Parameter,
+     *     2: Partial\Parameter,
+     * }>
+     */
     public static function provideParametersThatConflict(): Generator
     {
         $dataSet = fn(Style $style, bool $explode, Type $type) => [
@@ -634,7 +692,7 @@ class ParameterTest extends TestCase
         foreach (self::provideParametersThatConflict() as $case => $dataSet) {
             $dataSet[1]->schema = PartialHelper::createSchema(type: Type::Integer->value);
             $dataSet[2]->schema = PartialHelper::createSchema(type: Type::Integer->value);
-            
+
             yield $case => [
                 false,
                 $dataSet[1],
