@@ -41,7 +41,7 @@ final class Schema extends Validated
     /**
      * @var Type[]
      */
-    public readonly array $typesItCanBe;
+    private readonly array $typesItCanBe;
 
     public function __construct(
         Identifier $identifier,

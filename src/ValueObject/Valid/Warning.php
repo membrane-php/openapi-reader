@@ -65,4 +65,11 @@ final class Warning
      * Path Item, Operation: "parameters" can have identical/similar names, but this could be quite confusing.
      */
     public const SIMILAR_NAMES = 'similar-names';
+
+    /**
+     * Parameter:
+     * - spaceDelimited and pipeDelimited styles should not be used for primitive values
+     * - deepObject style should only be used for object values
+     */
+    public const UNSUITABLE_STYLE = 'unsuitable-style';
 }

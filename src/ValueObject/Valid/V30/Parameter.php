@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\In;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
 final class Parameter extends Validated
 {
@@ -44,8 +46,10 @@ final class Parameter extends Validated
      */
     public readonly array $content;
 
-    public function __construct(Identifier $parentIdentifier, Partial\Parameter $parameter)
-    {
+    public function __construct(
+        Identifier $parentIdentifier,
+        Partial\Parameter $parameter
+    ) {
         $this->name = $parameter->name ??
             throw InvalidOpenAPI::parameterMissingName($parentIdentifier);
 
@@ -91,7 +95,7 @@ final class Parameter extends Validated
             );
         }
 
-//        if ($this->getSchema()->canItBeThisType()
+        $this->checkStyleSuitability();
     }
 
     public function getSchema(): Schema
@@ -141,8 +145,7 @@ final class Parameter extends Validated
                 $other->explode &&
                 $this->getSchema()->canBe(Type::Object),
             Style::PipeDelimited, Style::SpaceDelimited =>
-                $this->getSchema()->canBe(Type::Array) ||
-                $this->getSchema()->canBe(Type::Object),
+                !$this->getSchema()->canOnlyBePrimitive(),
             default => false,
         };
     }
@@ -175,13 +178,13 @@ final class Parameter extends Validated
         ?string $style
     ): Style {
         if (is_null($style)) {
-            return Style::defaultCaseIn($in);
+            return Style::default($in);
         }
 
         $style = Style::tryFrom($style) ??
             throw InvalidOpenAPI::parameterInvalidStyle($identifier);
 
-        in_array($style, Style::casesIn($in)) ?:
+        $style->isAllowed($in) ?:
             throw InvalidOpenAPI::parameterIncompatibleStyle($identifier);
 
         return $style;
@@ -215,4 +218,22 @@ final class Parameter extends Validated
             ),
         ];
     }
+
+    private function checkStyleSuitability(): void
+    {
+        foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
+            if (
+                $this->getSchema()->canBe($type) &&
+                !$this->style->isSuitableFor($type)
+            ) {
+                $this->addWarning(
+                    'unsuitable style for primitive data types',
+                    Warning::UNSUITABLE_STYLE
+                );
+
+                break;
+            }
+        }
+    }
+
 }

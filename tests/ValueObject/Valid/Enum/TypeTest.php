@@ -43,6 +43,12 @@ class TypeTest extends TestCase
         self::assertSame($expected, Type::tryFromVersion($version, $type));
     }
 
+    #[Test, DataProvider('provideTypesThatMayBePrimitive')]
+    public function itKnowsIfItIsPrimitive(bool $expected, Type $type): void
+    {
+        self::assertSame($expected, $type->isPrimitive());
+    }
+
     /** @return Generator<array{ 0: Type[], 1: OpenAPIVersion }> */
     public static function provideCasesForVersion(): Generator
     {
@@ -97,6 +103,25 @@ class TypeTest extends TestCase
                 $case,
                 OpenAPIVersion::Version_3_1,
                 $case->value
+            ];
+        }
+    }
+
+    /** @return Generator<array{ 0: bool, 1: Type}> */
+    public static function provideTypesThatMayBePrimitive(): Generator
+    {
+        $primitiveTypes = [
+            Type::Boolean,
+            Type::Integer,
+            Type::Null,
+            Type::Number,
+            Type::String,
+        ];
+
+        foreach (Type::cases() as $type) {
+            yield "$type->value" => [
+                in_array($type, $primitiveTypes),
+                $type
             ];
         }
     }

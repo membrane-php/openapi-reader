@@ -14,7 +14,7 @@ enum Style: string
     case PipeDelimited = 'pipeDelimited';
     case DeepObject = 'deepObject';
 
-    public static function defaultCaseIn(In $in): self
+    public static function default(In $in): self
     {
         return match ($in) {
             In::Path, In::Header => self::Simple,
@@ -22,10 +22,14 @@ enum Style: string
         };
     }
 
-    /** @return self[] */
-    public static function casesIn(In $in): array
+    public function defaultExplode(): bool
     {
-        return match ($in) {
+        return $this === self::Form;
+    }
+
+    public function isAllowed(In $in): bool
+    {
+        return in_array($this, (match ($in) {
             In::Path => [
                 self::Matrix,
                 self::Label,
@@ -43,11 +47,16 @@ enum Style: string
             In::Cookie => [
                 self::Form,
             ]
-        };
+        }));
     }
 
-    public function defaultExplode(): bool
+    public function isSuitableFor(Type $type): bool
     {
-        return $this === self::Form;
+        return match ($this) {
+            self::SpaceDelimited,
+            self::PipeDelimited => !$type->isPrimitive(),
+            self::DeepObject => $type === Type::Object,
+            default => true,
+        };
     }
 }

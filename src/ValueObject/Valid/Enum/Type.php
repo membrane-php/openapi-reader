@@ -58,4 +58,13 @@ enum Type: string
             $type :
             null;
     }
+
+    public function isPrimitive(): bool
+    {
+        return match ($this) {
+            self::Array,
+            self::Object => false,
+            default => true,
+        };
+    }
 }
