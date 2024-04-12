@@ -42,6 +42,19 @@ class SchemaTest extends TestCase
         new Schema($identifier, $partialSchema);
     }
 
+    #[Test]
+    public function itInvalidatesInvalidTypes(): void
+    {
+        $identifier = new Identifier('');
+        $schema = PartialHelper::createSchema(type: 'invalid');
+
+
+
+        self::expectExceptionObject(InvalidOpenAPI::invalidType($identifier, 'invalid'));
+
+        new Schema($identifier, $schema);
+    }
+
     /** @param Type[] $typesItCanBe */
     #[Test, DataProvider('provideSchemasToCheckTypes')]
     public function itKnowsIfItCanBeACertainType(

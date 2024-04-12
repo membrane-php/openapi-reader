@@ -108,6 +108,7 @@ final class OpenAPI extends Validated
                     $pathItem->path
                 );
             }
+
             if (isset($result[$pathItem->path])) {
                 throw InvalidOpenAPI::identicalEndpoints(
                     $result[$pathItem->path]->getIdentifier()

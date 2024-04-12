@@ -234,5 +234,4 @@ final class Parameter extends Validated
             Warning::UNSUITABLE_STYLE
         );
     }
-
 }
