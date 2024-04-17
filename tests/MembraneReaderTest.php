@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\Tests;
 
-use cebe\{openapi\exceptions as CebeException, openapi\spec as CebeSpec};
+use cebe\{openapi\exceptions as CebeException};
 use Generator;
-use Membrane\OpenAPIReader\{CebeReader, FileFormat, OpenAPIVersion};
+use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
-use Membrane\OpenAPIReader\Reader;
+use Membrane\OpenAPIReader\MembraneReader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
-use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
-#[CoversClass(Reader::class)]
-#[CoversClass(CebeReader::class)]
+#[CoversClass(MembraneReader::class)]
 #[CoversClass(CannotRead::class), CoversClass(CannotSupport::class), CoversClass(InvalidOpenAPI::class)]
 #[UsesClass(FileFormat::class)]
 #[UsesClass(OpenAPIVersion::class)]
-#[UsesClass(Valid\Enum\Type::class)]
 #[UsesClass(Method::class)]
-#[UsesClass(Style::class)]
+#[UsesClass(Valid\Enum\Type::class)]
+#[UsesClass(Valid\Enum\Style::class)]
 #[UsesClass(FromCebe::class)]
 #[UsesClass(Identifier::class)]
 #[UsesClass(Partial\OpenAPI::class)]
@@ -50,24 +49,24 @@ use TypeError;
 #[UsesClass(Valid\Validated::class)]
 #[UsesClass(Valid\Warning::class)]
 #[UsesClass(Valid\Warnings::class)]
-class ReaderTest extends TestCase
+class MembraneReaderTest extends TestCase
 {
-    private string $petstorePath = __DIR__ . '/fixtures/petstore.yaml';
-
     #[Test]
-    public function itMustSupportAtleastOneOpenAPIVersion(): void
+    #[TestDox('Supported OpenAPI versions must be explicitly provided')]
+    public function itMustBeProvidedAtLeastOneVersionToSupport(): void
     {
         self::expectExceptionObject(CannotSupport::noSupportedVersions());
 
-        new Reader([]);
+        new MembraneReader([]);
     }
 
     #[Test]
-    public function itMustHaveAnArrayContainingOnlyOpenAPIVersions(): void
+    #[TestDox('Currently only V3.0.X Membrane Objects are supported')]
+    public function itCurrentlySupportsOnlyV30(): void
     {
-        self::expectException(TypeError::class);
+        self::expectExceptionObject(CannotSupport::membraneReaderOnlySupportsv30());
 
-        new Reader(['3.0.0']);
+        new MembraneReader([OpenAPIVersion::Version_3_1]);
     }
 
     #[Test]
@@ -79,7 +78,7 @@ class ReaderTest extends TestCase
 
         self::expectExceptionObject(CannotRead::fileNotFound($filePath));
 
-        (new Reader([OpenAPIVersion::Version_3_0]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
     }
 
@@ -94,60 +93,54 @@ class ReaderTest extends TestCase
             CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException())
         );
 
-        (new Reader([OpenAPIVersion::Version_3_0]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath($filePath);
     }
 
-    public static function provideMinimalOpenAPIAsArray(): Generator
-    {
-        yield [['openapi' => '3.0.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []]];
-    }
-
     #[Test]
-    #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCannotSupportUnspecifiedOpenAPIVersionsFromAbsoluteFilePath(array $openAPIArray): void
+    public function itCannotSupportUnspecifiedOpenAPIVersionsFromAbsoluteFilePath(): void
     {
-
+        $openAPIArray = ['openapi' => '3.1.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []];
         $filePath = vfsStream::setup()->url() . '/openapi';
         file_put_contents($filePath, json_encode($openAPIArray));
 
         self::expectExceptionObject(CannotSupport::unsupportedVersion($openAPIArray['openapi']));
 
-        (new Reader([OpenAPIVersion::Version_3_1]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
     }
 
     #[Test]
-    #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCannotSupportUnspecifiedOpenAPIVersionsFromString(array $openAPIArray): void
+    public function itCannotSupportUnspecifiedOpenAPIVersionsFromString(): void
     {
+        $openAPIArray = ['openapi' => '3.1.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []];
         self::expectExceptionObject(CannotSupport::unsupportedVersion($openAPIArray['openapi']));
 
-        (new Reader([OpenAPIVersion::Version_3_1]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromString(json_encode($openAPIArray), FileFormat::Json);
     }
 
     #[Test]
-    #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCanSupportSpecifiedOpenAPIVersionsFromAbsoluteFilePath(array $openAPIArray): void
+    public function itCanSupportSpecifiedOpenAPIVersionsFromAbsoluteFilePath(): void
     {
+        $openAPIArray = ['openapi' => '3.0.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []];
         $filePath = vfsStream::setup()->url() . '/openapi';
         file_put_contents($filePath, json_encode($openAPIArray));
 
-        $openAPIObject = (new Reader([OpenAPIVersion::Version_3_0]))
+        $openAPIObject = (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
 
-        self::assertInstanceOf(CebeSpec\OpenApi::class, $openAPIObject);
+        self::assertInstanceOf(Valid\V30\OpenAPI::class, $openAPIObject);
     }
 
     #[Test]
-    #[DataProvider('provideMinimalOpenAPIAsArray')]
-    public function itCanSupportSpecifiedOpenAPIVersionsFromString(array $openAPIArray): void
+    public function itCanSupportSpecifiedOpenAPIVersionsFromString(): void
     {
-        $openAPIObject = (new Reader([OpenAPIVersion::Version_3_0]))
+        $openAPIArray = ['openapi' => '3.0.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []];
+        $openAPIObject = (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromString(json_encode($openAPIArray), FileFormat::Json);
 
-        self::assertInstanceOf(CebeSpec\OpenApi::class, $openAPIObject);
+        self::assertInstanceOf(Valid\V30\OpenAPI::class, $openAPIObject);
     }
 
     #[Test]
@@ -157,20 +150,8 @@ class ReaderTest extends TestCase
 
         self::expectExceptionObject(CannotRead::unrecognizedFileFormat(__FILE__));
 
-        (new Reader([OpenAPIVersion::Version_3_0]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath(__FILE__);
-    }
-
-    public static function provideInvalidFormatting(): Generator
-    {
-        yield 'Empty string to be interpreted as json' => ['', FileFormat::Json];
-        yield 'Empty string to be interpreted as yaml' => ['', FileFormat::Yaml];
-        yield 'Invalid json format' => ['{openapi: ",', FileFormat::Json];
-        yield 'Invalid yaml format' => ['---openapi: ",- title: "invalid"', FileFormat::Yaml];
-        yield 'info is a string rather than an array' => [
-            json_encode(['openapi' => '3.0.0', 'info' => 'hold on what is this?', 'paths' => []]),
-            FileFormat::Json
-        ];
     }
 
     #[Test]
@@ -184,7 +165,7 @@ class ReaderTest extends TestCase
 
         self::expectExceptionObject(CannotRead::invalidFormatting(new TypeError()));
 
-        (new Reader([OpenAPIVersion::Version_3_0]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromAbsoluteFilePath($filePath, $fileFormat);
     }
 
@@ -196,8 +177,186 @@ class ReaderTest extends TestCase
     ): void {
         self::expectExceptionObject(CannotRead::invalidFormatting(new TypeError()));
 
-        (new Reader([OpenAPIVersion::Version_3_0]))
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
             ->readFromString($openAPIString, $fileFormat);
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidOpenAPIs')]
+    public function itWillNotProcessInvalidOpenAPIFromAbsoluteFilePath(
+        string $openAPIString,
+        InvalidOpenAPI $expectedException
+    ): void {
+        $filePath = vfsStream::setup()->url() . '/openapi.json';
+        file_put_contents($filePath, $openAPIString);
+
+        self::expectExceptionObject($expectedException);
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidOpenAPIs')]
+    public function itWillNotProcessInvalidOpenAPIFromString(string $openAPIString, InvalidOpenAPI $expectedException): void
+    {
+        self::expectExceptionObject($expectedException);
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Json);
+    }
+
+    #[Test, TestDox('Membrane requires operationIds for caching and routing')]
+    public function itCannotSupportMissingOperationIds(): void
+    {
+        $openAPIString = json_encode([
+            'openapi' => '3.0.0',
+            'info' => ['title' => '', 'version' => '1.0.0'],
+            'paths' => [
+                '/path' => [
+                    'get' => [
+                        // Missing operationId here
+                        'responses' => [200 => ['description' => ' Successful Response']],
+                    ],
+                ],
+            ],
+        ]);
+
+        self::expectExceptionObject(CannotSupport::missingOperationId('/path', 'get'));
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Json);
+    }
+
+    #[Test, DataProvider('provideOpenAPIWithInternalReference')]
+    public function itResolvesInternalReferencesFromAbsoluteFilePath(string $openAPIString): void
+    {
+        vfsStream::setup();
+        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
+
+        $openAPIObject = (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'), FileFormat::Json);
+
+        self::assertInstanceOf(
+            Valid\V30\Schema::class,
+            $openAPIObject->paths['/path']->get?->parameters[0]?->schema
+        );
+    }
+
+    #[Test, DataProvider('provideOpenAPIWithInternalReference')]
+    public function itResolvesInternalReferencesFromString(string $openAPIString): void
+    {
+        $openAPIObject = (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Yaml);
+
+        self::assertInstanceOf(
+            Valid\V30\Schema::class,
+            $openAPIObject->paths['/path']->get?->parameters[0]?->schema
+        );
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithExternalReference')]
+    public function itResolvesExternalReferencesFromAbsoluteFilePath(
+        string $openAPIString,
+        string $externalReference
+    ): void {
+        vfsStream::setup();
+        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
+        file_put_contents(vfsStream::url('root/' . $externalReference), '{"type":"integer"}');
+
+        $openAPIObject = (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'));
+
+        self::assertInstanceOf(
+            Valid\V30\Schema::class,
+            $openAPIObject->paths['/path']->get?->parameters[0]?->schema
+        );
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithExternalReference')]
+    public function itCannotResolveExternalReferenceFromString(string $openAPIString): void
+    {
+        self::expectExceptionObject(CannotRead::cannotResolveExternalReferencesFromString());
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Json);
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithInvalidReference')]
+    public function itCannotResolveInvalidReferenceFromFile(string $openAPIString): void
+    {
+        vfsStream::setup();
+        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
+
+        self::expectExceptionObject(CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException()));
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'));
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithInvalidReference')]
+    public function itCannotResolveInvalidReferenceFromString(string $openAPIString): void
+    {
+        self::expectExceptionObject(CannotRead::unresolvedReference(
+            new CebeException\UnresolvableReferenceException()
+        ));
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromString($openAPIString, FileFormat::Json);
+    }
+
+    #[Test, DataProvider('provideConflictingParameters')]
+    #[TestDox('It cannot support multiple parameters with the potential to conflict.')]
+    public function itCannotSupportAmbiguousResolution(
+        string $openAPIString,
+        CannotSupport $expected
+    ): void {
+        $filePath = vfsStream::setup()->url() . '/openapi.json';
+        file_put_contents($filePath, $openAPIString);
+
+        self::expectExceptionObject($expected);
+
+        (new MembraneReader([OpenAPIVersion::Version_3_0]))
+            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+    }
+
+    #[Test, DataProvider('provideOpenAPIToRead')]
+    public function itReadsFromFile(OpenAPI $expected, string $openApi): void
+    {
+        $filePath = vfsStream::setup()->url() . '/openapi.json';
+        file_put_contents($filePath, $openApi);
+
+        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+
+        $actual = $sut->readFromAbsoluteFilePath($filePath, FileFormat::Json);
+
+        self::assertEquals($expected, $actual);
+    }
+
+    #[Test, DataProvider('provideOpenAPIToRead')]
+    public function itReadsFromString(OpenAPI $expected, string $openApi): void
+    {
+        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+
+        $actual = $sut->readFromString($openApi, FileFormat::Json);
+
+        self::assertEquals($expected, $actual);
+    }
+
+    public static function provideInvalidFormatting(): Generator
+    {
+        yield 'Empty string to be interpreted as json' => ['', FileFormat::Json];
+        yield 'Empty string to be interpreted as yaml' => ['', FileFormat::Yaml];
+        yield 'Invalid json format' => ['{openapi: ",', FileFormat::Json];
+        yield 'Invalid yaml format' => ['---openapi: ",- title: "invalid"', FileFormat::Yaml];
+        yield 'info is a string rather than an array' => [
+            json_encode(['openapi' => '3.0.0', 'info' => 'hold on what is this?', 'paths' => []]),
+            FileFormat::Json
+        ];
     }
 
     public static function provideInvalidOpenAPIs(): Generator
@@ -314,75 +473,44 @@ class ReaderTest extends TestCase
         ];
     }
 
-    #[Test]
-    #[DataProvider('provideInvalidOpenAPIs')]
-    public function itWillNotProcessInvalidOpenAPIFromAbsoluteFilePath(
-        string $openAPIString,
-        InvalidOpenAPI $expectedException
-    ): void {
-        $filePath = vfsStream::setup()->url() . '/openapi.json';
-        file_put_contents($filePath, $openAPIString);
-
-        self::expectExceptionObject($expectedException);
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
-    }
-
-    #[Test]
-    #[DataProvider('provideInvalidOpenAPIs')]
-    public function itWillNotProcessInvalidOpenAPIFromString(string $openAPIString, InvalidOpenAPI $expectedException): void
+    public static function provideOpenAPIWithInternalReference(): Generator
     {
-        self::expectExceptionObject($expectedException);
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString($openAPIString, FileFormat::Json);
-    }
-
-    #[Test, TestDox('Membrane requires operationIds for caching and routing')]
-    public function itCannotSupportMissingOperationIds(): void
-    {
-        $openAPIString = json_encode([
-            'openapi' => '3.0.0',
-            'info' => ['title' => '', 'version' => '1.0.0'],
-            'paths' => [
-                '/path' => [
-                    'get' => [
-                        // Missing operationId here
-                        'responses' => [200 => ['description' => ' Successful Response']],
+        yield (function () {
+            return [
+                json_encode([
+                    'openapi' => '3.0.0',
+                    'info' => ['title' => 'API With Reference Object', 'version' => '1.0.0'],
+                    'paths' => [
+                        '/path' => [
+                            'get' => [
+                                'operationId' => 'get-path',
+                                'parameters' => [
+                                    [
+                                        'name' => 'param',
+                                        'in' => 'query',
+                                        'schema' => [
+                                            '$ref' => '#/components/schemas/object',
+                                        ]
+                                    ]
+                                ],
+                                'responses' => [
+                                    200 => [
+                                        'description' => 'Successful Response',
+                                    ],
+                                ],
+                            ],
+                        ],
                     ],
-                ],
-            ],
-        ]);
-
-        self::expectExceptionObject(CannotSupport::missingOperationId('/path', 'get'));
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString($openAPIString, FileFormat::Json);
-    }
-
-    #[Test]
-    public function itResolvesInternalReferencesFromAbsoluteFilePath(): void
-    {
-        $api = (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromAbsoluteFilePath($this->petstorePath, FileFormat::Yaml);
-
-        self::assertInstanceOf(
-            CebeSpec\Schema::class,
-            $api->paths['/pets']->get->responses[200]->content['application/json']->schema
-        );
-    }
-
-    #[Test]
-    public function itResolvesInternalReferencesFromString(): void
-    {
-        $api = (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString(file_get_contents($this->petstorePath), FileFormat::Yaml);
-
-        self::assertInstanceOf(
-            CebeSpec\Schema::class,
-            $api->paths['/pets']->get->responses[200]->content['application/json']->schema
-        );
+                    'components' => [
+                        'schemas' => [
+                            'object' => [
+                                'type' => 'object'
+                            ]
+                        ]
+                    ]
+                ]),
+            ];
+        })();
     }
 
     public static function provideOpenAPIWithExternalReference(): Generator
@@ -397,16 +525,18 @@ class ReaderTest extends TestCase
                         '/path' => [
                             'get' => [
                                 'operationId' => 'get-path',
+                                'parameters' => [
+                                    [
+                                        'name' => 'param',
+                                        'in' => 'query',
+                                        'schema' => [
+                                            '$ref' => $externalRef
+                                        ]
+                                    ]
+                                ],
                                 'responses' => [
                                     200 => [
                                         'description' => 'Successful Response',
-                                        'content' => [
-                                            'application/json' => [
-                                                'schema' => [
-                                                    '$ref' => $externalRef,
-                                                ],
-                                            ],
-                                        ],
                                     ],
                                 ],
                             ],
@@ -416,35 +546,6 @@ class ReaderTest extends TestCase
                 $externalRef,
             ];
         })();
-    }
-
-    #[Test]
-    #[DataProvider('provideOpenAPIWithExternalReference')]
-    public function itResolvesExternalReferencesFromAbsoluteFilePath(
-        string $openAPIString,
-        string $externalReference
-    ): void {
-        vfsStream::setup();
-        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
-        file_put_contents(vfsStream::url('root/' . $externalReference), '{"type":"integer"}');
-
-        $openAPIObject = (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'));
-
-        self::assertInstanceOf(
-            CebeSpec\Schema::class,
-            $openAPIObject->paths['/path']->get->responses[200]->content['application/json']->schema
-        );
-    }
-
-    #[Test]
-    #[DataProvider('provideOpenAPIWithExternalReference')]
-    public function itCannotResolveExternalReferenceFromString(string $openAPIString,): void
-    {
-        self::expectExceptionObject(CannotRead::cannotResolveExternalReferencesFromString());
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString($openAPIString, FileFormat::Json);
     }
 
     public static function provideOpenAPIWithInvalidReference(): Generator
@@ -481,29 +582,6 @@ class ReaderTest extends TestCase
                 ]
             ]),
         ];
-    }
-
-    #[Test]
-    #[DataProvider('provideOpenAPIWithInvalidReference')]
-    public function itCannotResolveInvalidReferenceFromAbsoluteFilePath(string $openAPIString): void
-    {
-        vfsStream::setup();
-        file_put_contents(vfsStream::url('root/openapi.json'), $openAPIString);
-
-        self::expectExceptionObject(CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException()));
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromAbsoluteFilePath(vfsStream::url('root/openapi.json'));
-    }
-
-    #[Test]
-    #[DataProvider('provideOpenAPIWithInvalidReference')]
-    public function itCannotResolveInvalidReferenceFromString(string $openAPIString,): void
-    {
-        self::expectExceptionObject(CannotRead::unresolvedReference(new CebeException\UnresolvableReferenceException()));
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromString($openAPIString, FileFormat::Json);
     }
 
     public static function provideConflictingParameters(): Generator
@@ -634,55 +712,16 @@ class ReaderTest extends TestCase
         ];
     }
 
-    #[Test, DataProvider('provideConflictingParameters')]
-    #[TestDox('It cannot support multiple parameters with the potential to conflict.')]
-    public function itCannotSupportAmbiguousResolution(
-        string $openAPIString,
-        CannotSupport $expected
-    ): void {
-        $filePath = vfsStream::setup()->url() . '/openapi.json';
-        file_put_contents($filePath, $openAPIString);
-
-        self::expectExceptionObject($expected);
-
-        (new Reader([OpenAPIVersion::Version_3_0]))
-            ->readFromAbsoluteFilePath($filePath, FileFormat::Json);
-    }
-
     public static function provideOpenAPIToRead(): Generator
     {
         yield 'minimal OpenAPI' => [
-            OpenAPIProvider::minimalV30CebeObject(),
+            OpenAPIProvider::minimalV30MembraneObject(),
             OpenAPIProvider::minimalV30String(),
         ];
 
         yield 'detailed OpenAPI' => [
-            OpenAPIProvider::detailedV30CebeObject(),
+            OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
         ];
-    }
-
-// The cebe object created has different json pointers
-//    #[Test, DataProvider('provideOpenAPIToRead')]
-//    public function itReadsFromFile(CebeSpec\OpenApi $expected, string $openApi): void
-//    {
-//        $filePath = vfsStream::setup()->url() . '/openapi.json';
-//        file_put_contents($filePath, $openApi);
-//
-//        $sut = new Reader([OpenAPIVersion::Version_3_0]);
-//
-//        $actual = $sut->readFromAbsoluteFilePath($filePath, FileFormat::Json);
-//
-//        self::assertEquals($expected, $actual);
-//    }
-
-    #[Test, DataProvider('provideOpenAPIToRead')]
-    public function itReadsFromString(CebeSpec\OpenApi $expected, string $openApi): void
-    {
-        $sut = new Reader([OpenAPIVersion::Version_3_0]);
-
-        $actual = $sut->readFromString($openApi, FileFormat::Json);
-
-        self::assertEquals($expected, $actual);
     }
 }
