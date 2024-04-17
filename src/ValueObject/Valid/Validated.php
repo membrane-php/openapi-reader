@@ -11,6 +11,7 @@ abstract class Validated implements HasIdentifier, HasWarnings
     public function __construct(
         private readonly Identifier $identifier,
     ) {
+        $this->warnings = new Warnings($this->identifier);
     }
 
     public function getIdentifier(): Identifier
@@ -28,15 +29,11 @@ abstract class Validated implements HasIdentifier, HasWarnings
 
     public function hasWarnings(): bool
     {
-        return isset($this->warnings);
+        return $this->warnings->hasWarnings();
     }
 
     public function getWarnings(): Warnings
     {
-        if (!isset($this->warnings)) {
-            $this->warnings = new Warnings($this->identifier);
-        }
-
         return $this->warnings;
     }
 
