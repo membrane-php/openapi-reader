@@ -224,14 +224,13 @@ final class Parameter extends Validated
         foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
             if (
                 $this->getSchema()->canBe($type) &&
-                $this->style->isSuitableFor($type)
+                !$this->style->isSuitableFor($type)
             ) {
-                return;
+                $this->addWarning(
+                    sprintf('unsuitable style for type:%s', $type->value),
+                    Warning::UNSUITABLE_STYLE
+                );
             }
         }
-        $this->addWarning(
-            'unsuitable style for primitive data types',
-            Warning::UNSUITABLE_STYLE
-        );
     }
 }
