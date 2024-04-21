@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
-use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\In;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Style;
@@ -67,17 +66,8 @@ final class Parameter extends Validated
             $parameter->required
         );
 
-        $this->style = $this->validateStyle(
-            $identifier,
-            $this->in,
-            $parameter->style,
-        );
-
-        $this->explode = $parameter->explode ?? $this->style->defaultExplode();
-
-        if (isset($parameter->schema) !== empty($parameter->content)) {
+        isset($parameter->schema) === empty($parameter->content) ?:
             throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
-        }
 
         if (isset($parameter->schema)) {
             $this->content = [];
@@ -95,7 +85,14 @@ final class Parameter extends Validated
             );
         }
 
-        $this->checkStyleSuitability();
+        $this->style = $this->validateStyle(
+            $identifier,
+            $this->getSchema(),
+            $this->in,
+            $parameter->style,
+        );
+
+        $this->explode = $parameter->explode ?? $this->style->defaultExplode();
     }
 
     public function getSchema(): Schema
@@ -129,24 +126,42 @@ final class Parameter extends Validated
             mb_strtolower($this->name) === mb_strtolower($other->name);
     }
 
-    public function canConflict(Parameter $other): bool
+    public function canConflictWith(Parameter $other): bool
     {
-        if (
-            $this->in !== $other->in || // parameter can be identified by differing location
-            $this->style !== $other->style || // parameter can be identified by differing style
-            $this->in !== In::Query
-        ) {
-            return false;
-        }
+        return ($this->canCauseConflict() && $other->isVulnerableToConflict()) ||
+            ($this->isVulnerableToConflict() && $other->canCauseConflict());
+    }
 
-        return match ($this->style) {
-            Style::Form =>
-                $this->explode &&
-                $other->explode &&
-                $this->getSchema()->canBe(Type::Object),
-            Style::PipeDelimited, Style::SpaceDelimited =>
-                !$this->getSchema()->canOnlyBePrimitive(),
-            default => false,
+    private function canCauseConflict(): bool
+    {
+        return $this->in === In::Query &&
+            $this->style === Style::Form &&
+            $this->explode &&
+            $this->getSchema()->canBe(Type::Object);
+    }
+
+    private function isVulnerableToConflict(): bool
+    {
+        /**
+         * @todo once schemas account for minItems and minProperties keywords.
+         * pipeDelimited and spaceDelimited are also vulnerable if:
+         * type:array and minItems <= 1
+         * this is because there would be no delimiter to distinguish it from a form parameter
+         *
+         * form would not be vulnerable if:
+         * explode:false
+         * and...
+         * type:object and minProperties > 1
+         * or ...
+         * type:array and minItems > 1
+         * this is because there would be a delimiter to distinguish it from an exploding parameter
+         */
+
+        return $this->in === In::Query && match ($this->style) {
+            Style::Form => true,
+            Style::PipeDelimited,
+            Style::SpaceDelimited => $this->getSchema()->canBePrimitive(),
+            default => false
         };
     }
 
@@ -174,6 +189,7 @@ final class Parameter extends Validated
 
     private function validateStyle(
         Identifier $identifier,
+        Schema $schema,
         In $in,
         ?string $style
     ): Style {
@@ -186,6 +202,20 @@ final class Parameter extends Validated
 
         $style->isAllowed($in) ?:
             throw InvalidOpenAPI::parameterIncompatibleStyle($identifier);
+
+        $style !== Style::DeepObject || $schema->canOnlyBe(Type::Object) ?:
+            throw InvalidOpenAPI::deepObjectMustBeObject($identifier);
+
+        if (
+            in_array($style, [Style::SpaceDelimited, Style::PipeDelimited]) &&
+            $schema->canBePrimitive()
+        ) {
+            $this->addWarning(
+                "style:$style->value, is not allowed to be primitive." .
+                'In these instances style:form is recommended.',
+                Warning::UNSUITABLE_STYLE
+            );
+        }
 
         return $style;
     }
@@ -217,21 +247,5 @@ final class Parameter extends Validated
                 $content[0]
             ),
         ];
-    }
-
-    private function checkStyleSuitability(): void
-    {
-        foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
-            if (
-                $this->getSchema()->canBe($type) &&
-                $this->style->isSuitableFor($type)
-            ) {
-                return;
-            }
-        }
-        $this->addWarning(
-            'unsuitable style for primitive data types',
-            Warning::UNSUITABLE_STYLE
-        );
     }
 }

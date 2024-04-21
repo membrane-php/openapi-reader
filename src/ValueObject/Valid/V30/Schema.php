@@ -129,9 +129,15 @@ final class Schema extends Validated
         return [$type] === $this->typesItCanBe;
     }
 
-    public function canOnlyBePrimitive(): bool
+    public function canBePrimitive(): bool
     {
-        return !$this->canBe(Type::Array) && !$this->canBe(Type::Object);
+        foreach ($this->typesItCanBe as $typeItCanBe) {
+            if ($typeItCanBe->isPrimitive()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return string[] */

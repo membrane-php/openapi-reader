@@ -12,6 +12,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\MediaType;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
+use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -25,6 +26,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Partial\Schema::class)]
 #[UsesClass(Schema::class)]
 #[UsesClass(Type::class)]
+#[UsesClass(Warnings::class)]
 class MediaTypeTest extends TestCase
 {
     #[Test]

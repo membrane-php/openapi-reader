@@ -95,9 +95,11 @@ class SchemaTest extends TestCase
         $sut = new Schema(new Identifier(''), $partialSchema);
 
         self::assertSame(
-            !in_array(Type::Object, $typesItCanBe) &&
-            !in_array(Type::Array, $typesItCanBe),
-            $sut->canOnlyBePrimitive()
+            !empty(array_filter($typesItCanBe, fn($t) => !in_array(
+                $t,
+                [Type::Array, Type::Object]
+            ))),
+            $sut->canBePrimitive()
         );
     }
 
