@@ -127,7 +127,7 @@ final class Operation extends Validated
                     );
                 }
 
-                if ($parameter->canConflict($otherParameter)) {
+                if ($parameter->canConflictWith($otherParameter)) {
                     throw CannotSupport::conflictingParameterStyles(
                         (string) $parameter->getIdentifier(),
                         (string) $otherParameter->getIdentifier(),

@@ -280,6 +280,16 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function deepObjectMustBeObject(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            style:deepObject is only applicable to schemas of type:object
+            Therefore, your schema MUST be valid ONLY as type:object
+            TEXT;
+
+        return new self($message);
+    }
     public static function invalidType(Identifier $identifier, string $type): self
     {
         $message = <<<TEXT

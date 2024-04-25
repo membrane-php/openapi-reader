@@ -602,77 +602,7 @@ class MembraneReaderTest extends TestCase
             'responses' => [200 => ['description' => ' Successful Response']]
         ];
 
-        yield 'operation with two spaceDelimited exploding arrays' => [
-            json_encode(
-                $openAPI($path(
-                    [],
-                    $operation([
-                        'operationId' => 'test-op',
-                        'parameters' => [
-                            [
-                                'name' => 'param1',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'spaceDelimited',
-                                'schema' => ['type' => 'array'],
-                            ],
-                            [
-                                'name' => 'param2',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'spaceDelimited',
-                                'schema' => ['type' => 'array'],
-                            ]
-                        ],
-                    ])
-                ))
-            ),
-            CannotSupport::conflictingParameterStyles(
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param1(query)"]',
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param2(query)"]',
-            )
-        ];
-
-        yield 'spaceDelimited exploding in path, pipeDelimited exploding in query and spaceDelimited exploding in query' => [
-            json_encode(
-                $openAPI($path(
-                    [
-                        [
-                            'name' => 'param1',
-                            'in' => 'query',
-                            'explode' => true,
-                            'style' => 'spaceDelimited',
-                            'schema' => ['type' => 'array'],
-                        ],
-                    ],
-                    $operation([
-                        'operationId' => 'test-op',
-                        'parameters' => [
-                            [
-                                'name' => 'param2',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'pipeDelimited',
-                                'schema' => ['type' => 'array'],
-                            ],
-                            [
-                                'name' => 'param3',
-                                'in' => 'query',
-                                'explode' => true,
-                                'style' => 'spaceDelimited',
-                                'schema' => ['type' => 'array'],
-                            ]
-                        ],
-                    ])
-                ))
-            ),
-            CannotSupport::conflictingParameterStyles(
-                '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param3(query)"]',
-                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
-            )
-        ];
-
-        yield 'form exploding object in path, pipeDelimited object in path, pipeDelimited exploding in query' => [
+        yield 'form exploding object in path, pipeDelimited object in path, form exploding in operation' => [
             json_encode(
                 $openAPI($path(
                     [
@@ -698,7 +628,7 @@ class MembraneReaderTest extends TestCase
                                 'name' => 'param3',
                                 'in' => 'query',
                                 'explode' => true,
-                                'style' => 'pipeDelimited',
+                                'style' => 'form',
                                 'schema' => ['type' => 'array'],
                             ]
                         ],
@@ -707,6 +637,34 @@ class MembraneReaderTest extends TestCase
             ),
             CannotSupport::conflictingParameterStyles(
                 '["test-api(1.0.0)"]["/path"]["test-op(get)"]["param3(query)"]',
+                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
+            )
+        ];
+
+        yield 'form exploding object in path, pipeDelimited primitive in path, form exploding in operation' => [
+            json_encode(
+                $openAPI($path(
+                    [
+                        [
+                            'name' => 'param1',
+                            'in' => 'query',
+                            'explode' => true,
+                            'style' => 'form',
+                            'schema' => ['type' => 'object'],
+                        ],
+                        [
+                            'name' => 'param2',
+                            'in' => 'query',
+                            'explode' => true,
+                            'style' => 'pipeDelimited',
+                            'schema' => ['type' => 'string'],
+                        ],
+                    ],
+                    $operation(['operationId' => 'test-op'])
+                ))
+            ),
+            CannotSupport::conflictingParameterStyles(
+                '["test-api(1.0.0)"]["/path"]["param1(query)"]',
                 '["test-api(1.0.0)"]["/path"]["param2(query)"]',
             )
         ];

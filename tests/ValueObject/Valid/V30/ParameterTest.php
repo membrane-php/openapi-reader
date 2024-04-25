@@ -85,7 +85,11 @@ class ParameterTest extends TestCase
     ): void {
         $sut = new Parameter(
             new Identifier('test'),
-            PartialHelper::createParameter(in: $in->value, style: $style->value)
+            PartialHelper::createParameter(
+                in: $in->value,
+                style: $style->value,
+                schema: PartialHelper::createSchema(type: Type::Object->value),
+            )
         );
 
         self::assertSame($style, $sut->style);
@@ -114,7 +118,8 @@ class ParameterTest extends TestCase
             PartialHelper::createParameter(
                 in: $in->value,
                 style: $style->value,
-                explode: null
+                explode: null,
+                schema: PartialHelper::createSchema(type: Type::Object->value),
             )
         );
 
@@ -175,26 +180,44 @@ class ParameterTest extends TestCase
         self::assertSame($expected, $sut->isSimilar($otherSUT));
     }
 
+    #[Test]
+    public function itInvalidesDeepObjectThatIsNotStrictlyObject(): void {
+        $identifier = new Identifier('');
+        $name = 'test-param';
+        $in = In::Query->value;
+        $partialParameter = PartialHelper::createParameter(
+            name: $name,
+            in: $in,
+            style: Style::DeepObject->value,
+            schema: PartialHelper::createSchema(),
+        );
+
+        self::expectExceptionObject(
+            InvalidOpenAPI::deepObjectMustBeObject($identifier->append($name, $in))
+        );
+
+        $sut = new Parameter($identifier, $partialParameter);
+
+    }
+
     #[Test, DataProvider('provideStylesThatMayBeSuitable')]
     public function itWarnsAgainstUnsuitableStyles(
-        bool $expected,
+        bool $isUnsuitable,
         Partial\Parameter $parameter,
     ): void {
         $sut = new Parameter(new Identifier(''), $parameter);
 
-        self::assertSame(
-            $expected,
-            $sut->getWarnings()->hasWarningCode(Warning::UNSUITABLE_STYLE)
-        );
+        self::assertSame($isUnsuitable, $sut
+            ->getWarnings()
+            ->hasWarningCode(Warning::UNSUITABLE_STYLE));
     }
 
     #[Test]
     #[DataProvider('provideParametersThatAreNotInQuery')]
     #[DataProvider('provideParametersWithDifferentStyles')]
     #[DataProvider('provideParametersThatMustBePrimitiveType')]
-    #[DataProvider('provideParametersWithDifferentExplodes')]
     #[DataProvider('provideParametersInQueryThatDoNotConflict')]
-    #[DataProvider('provideParametersThatConflict')]
+    #[DataProvider('provideVulnerableParametersExplodingFormObjects')]
     public function itChecksIfItCanConflict(
         bool $expected,
         Partial\Parameter $parameter,
@@ -203,7 +226,7 @@ class ParameterTest extends TestCase
         $sut = new Parameter(new Identifier(''), $parameter);
         $otherSUT = new Parameter(new Identifier(''), $other);
 
-        self::assertSame($expected, $sut->canConflict($otherSUT));
+        self::assertSame($expected, $sut->canConflictWith($otherSUT));
     }
 
     public static function provideInvalidPartialParameters(): Generator
@@ -496,8 +519,11 @@ class ParameterTest extends TestCase
     {
         foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
             foreach (Style::cases() as $style) {
+                if ($style === Style::DeepObject && $type !== Type::Object) {
+                    continue; // this unsuitability invalidates the OpenAPI
+                }
                 yield "style:$style->value, type:$type->value" => [
-                    !$style->isSuitableFor($type),
+                    in_array($style, [Style::SpaceDelimited, Style::PipeDelimited]) && $type->isPrimitive(),
                     PartialHelper::createParameter(
                         in: array_values(array_filter(
                             In::cases(),
@@ -566,16 +592,22 @@ class ParameterTest extends TestCase
             $style = array_pop($availableStyles);
             foreach ($availableStyles as $other) {
                 yield "style:$style->value and other style:$other->value" => [
-                    false,
+                    in_array(Style::Form, [$style, $other]) && !in_array(Style::DeepObject, [$style, $other]),
                     PartialHelper::createParameter(
                         in: In::Query->value,
                         style: $style->value,
                         explode: true,
+                        schema: PartialHelper::createSchema(
+                            type: $style === Style::DeepObject ? 'object' : null,
+                        )
                     ),
                     PartialHelper::createParameter(
                         in: In::Query->value,
                         style: $other->value,
                         explode: true,
+                        schema: PartialHelper::createSchema(
+                            type: $other === Style::DeepObject ? 'object' : null,
+                        )
                     ),
                 ];
             }
@@ -589,53 +621,23 @@ class ParameterTest extends TestCase
      *     2: Partial\Parameter,
      * }>
      */
-    public static function provideParametersWithDifferentExplodes(): Generator
-    {
-        $stylesWhereDifferentExplodesMatter = [Style::Form];
-
-        foreach ($stylesWhereDifferentExplodesMatter as $style) {
-            yield "style:$style->value" => [
-                false,
-                PartialHelper::createParameter(
-                    in: In::Query->value,
-                    style: $style->value,
-                    explode: true,
-                ),
-                PartialHelper::createParameter(
-                    in: In::Query->value,
-                    style: $style->value,
-                    explode: false,
-                ),
-            ];
-        }
-    }
-
-    /**
-     * @return Generator<array{
-     *     0: bool,
-     *     1: Partial\Parameter,
-     *     2: Partial\Parameter,
-     * }>
-     */
     public static function provideParametersInQueryThatDoNotConflict(): Generator
     {
-        $queryStylesThatCannotConflict = [Style::DeepObject];
-
-        foreach ($queryStylesThatCannotConflict as $style) {
-            yield "style:$style->value" => [
-                false,
-                PartialHelper::createParameter(
-                    in: In::Query->value,
-                    style: $style->value,
-                    explode: true,
-                ),
-                PartialHelper::createParameter(
-                    in: In::Query->value,
-                    style: $style->value,
-                    explode: true,
-                ),
-            ];
-        }
+        yield 'deepObject' => [
+            false,
+            PartialHelper::createParameter(
+                in: In::Query->value,
+                style: Style::DeepObject->value,
+                explode: true,
+                schema: PartialHelper::createSchema(type: Type::Object->value)
+            ),
+            PartialHelper::createParameter(
+                in: In::Query->value,
+                style: Style::DeepObject->value,
+                explode: true,
+                schema: PartialHelper::createSchema(type: Type::Object->value)
+            ),
+        ];
     }
 
     /**
@@ -645,15 +647,15 @@ class ParameterTest extends TestCase
      *     2: Partial\Parameter,
      * }>
      */
-    public static function provideParametersThatConflict(): Generator
+    public static function provideVulnerableParametersExplodingFormObjects(): Generator
     {
         $dataSet = fn(Style $style, bool $explode, Type $type) => [
             true,
             PartialHelper::createParameter(
                 in: In::Query->value,
-                style: $style->value,
-                explode: $explode,
-                schema: PartialHelper::createSchema(type: $type->value)
+                style: Style::Form->value,
+                explode: true,
+                schema: PartialHelper::createSchema(type: Type::Object->value)
             ),
             PartialHelper::createParameter(
                 in: In::Query->value,
@@ -666,18 +668,11 @@ class ParameterTest extends TestCase
         yield 'style:form and explode:true for object data types' =>
         $dataSet(Style::Form, true, Type::Object);
 
+        yield 'style:pipeDelimited with primitive data type' =>
+        $dataSet(Style::PipeDelimited, false, Type::String);
 
-        yield 'style:pipeDelimited for array data types' =>
-        $dataSet(Style::PipeDelimited, false, Type::Array);
-
-        yield 'style:pipeDelimited for object data types' =>
-        $dataSet(Style::PipeDelimited, false, Type::Object);
-
-        yield 'style:spaceDelimited for array data types' =>
-        $dataSet(Style::SpaceDelimited, false, Type::Array);
-
-        yield 'style:spaceDelimited for object data types' =>
-        $dataSet(Style::SpaceDelimited, false, Type::Object);
+        yield 'style:spaceDelimited with primitive data type' =>
+        $dataSet(Style::SpaceDelimited, false, Type::String);
     }
 
     /**
@@ -689,7 +684,7 @@ class ParameterTest extends TestCase
      */
     public static function provideParametersThatMustBePrimitiveType(): Generator
     {
-        foreach (self::provideParametersThatConflict() as $case => $dataSet) {
+        foreach (self::provideVulnerableParametersExplodingFormObjects() as $case => $dataSet) {
             $dataSet[1]->schema = PartialHelper::createSchema(type: Type::Integer->value);
             $dataSet[2]->schema = PartialHelper::createSchema(type: Type::Integer->value);
 
