@@ -217,7 +217,7 @@ class ParameterTest extends TestCase
     #[DataProvider('provideParametersWithDifferentStyles')]
     #[DataProvider('provideParametersThatMustBePrimitiveType')]
     #[DataProvider('provideParametersInQueryThatDoNotConflict')]
-    #[DataProvider('provideVulnerableParametersExplodingFormObjects')]
+    #[DataProvider('provideParametersThatAreVulnerableToExplodingFormObject')]
     public function itChecksIfItCanConflict(
         bool $expected,
         Partial\Parameter $parameter,
@@ -647,7 +647,7 @@ class ParameterTest extends TestCase
      *     2: Partial\Parameter,
      * }>
      */
-    public static function provideVulnerableParametersExplodingFormObjects(): Generator
+    public static function provideParametersThatAreVulnerableToExplodingFormObject(): Generator
     {
         $dataSet = fn(Style $style, bool $explode, Type $type) => [
             true,
@@ -684,11 +684,19 @@ class ParameterTest extends TestCase
      */
     public static function provideParametersThatMustBePrimitiveType(): Generator
     {
-        foreach (self::provideVulnerableParametersExplodingFormObjects() as $case => $dataSet) {
-            $dataSet[1]->schema = PartialHelper::createSchema(type: Type::Integer->value);
-            $dataSet[2]->schema = PartialHelper::createSchema(type: Type::Integer->value);
+        foreach (self::provideParametersWithDifferentStyles() as $case => $dataSet) {
+            if ($dataSet[1]->style !== Style::DeepObject->value) {
+                $dataSet[1]->schema = PartialHelper::createSchema(
+                    type: Type::Integer->value
+                );
+            }
+            if ($dataSet[2]->style !== Style::DeepObject->value) {
+                $dataSet[2]->schema = PartialHelper::createSchema(
+                    type: Type::Integer->value
+                );
+            }
 
-            yield $case => [
+            yield 'integer only:' . $case => [
                 false,
                 $dataSet[1],
                 $dataSet[2],
