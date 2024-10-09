@@ -53,7 +53,7 @@ class OperationTest extends TestCase
         self::expectException(CannotSupport::class);
         self::expectExceptionCode(CannotSupport::MISSING_OPERATION_ID);
 
-        new Operation(new Identifier(''), [], [], Method::GET, $partialOperation);
+        Operation::fromPartial(new Identifier(''), [], [], Method::GET, $partialOperation);
     }
 
     /**
@@ -68,7 +68,7 @@ class OperationTest extends TestCase
         Method $method,
         Partial\Operation $partialOperation
     ): void {
-        $sut = new Operation($parentIdentifier, [], $pathParameters, $method, $partialOperation);
+        $sut = Operation::fromPartial($parentIdentifier, [], $pathParameters, $method, $partialOperation);
 
         self::assertEquals($expected, $sut->parameters);
     }
@@ -104,13 +104,13 @@ class OperationTest extends TestCase
                     style: 'form',
                     explode: true,
                     schema: new Partial\Schema(type: 'object')
-                )
+                ),
             ]
         );
 
         self::expectExceptionObject(CannotSupport::conflictingParameterStyles(...$parameterIdentifiers));
 
-        new Operation($parentIdentifier, [], [], $method, $partialOperation);
+        Operation::fromPartial($parentIdentifier, [], [], $method, $partialOperation);
     }
 
     #[Test, DataProvider('provideOperationsToValidate')]
@@ -122,7 +122,7 @@ class OperationTest extends TestCase
     ): void {
         self::expectExceptionObject($expected);
 
-        new Operation($parentIdentifier, [], [], $method, $partialOperation);
+        Operation::fromPartial($parentIdentifier, [], [], $method, $partialOperation);
     }
 
     /**
@@ -140,7 +140,7 @@ class OperationTest extends TestCase
         array $pathServers,
         array $operationServers,
     ): void {
-        $sut = new Operation(
+        $sut = Operation::fromPartial(
             $parentIdentifier,
             $pathServers,
             [],
@@ -163,7 +163,7 @@ class OperationTest extends TestCase
         array $expected,
         Partial\Operation $operation,
     ): void {
-        $sut = new Operation(
+        $sut = Operation::fromPartial(
             new Identifier('test'),
             [],
             [],
@@ -172,26 +172,6 @@ class OperationTest extends TestCase
         );
 
         self::assertEquals($expected, $sut
-            ->getWarnings()
-            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
-    }
-
-
-    #[Test]
-    #[TestDox('The PathItem object will already warn about its own duplicates')]
-    public function itWillNotWarnForDuplicatePathLevelServers(): void
-    {
-        $identifier = new Identifier('test');
-        $server = new Server($identifier, PartialHelper::createServer());
-        $sut = new Operation(
-            $identifier,
-            [$server, $server],
-            [],
-            Method::GET,
-            PartialHelper::createOperation(),
-        );
-
-        self::assertEmpty($sut
             ->getWarnings()
             ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
@@ -206,7 +186,7 @@ class OperationTest extends TestCase
         array $pathParameters,
         array $operationParameters,
     ): void {
-        $sut = new Operation(
+        $sut = Operation::fromPartial(
             new Identifier('test'),
             [],
             $pathParameters,
@@ -226,7 +206,7 @@ class OperationTest extends TestCase
             PartialHelper::createParameter()
         );
 
-        $sut = new Operation(
+        $sut = Operation::fromPartial(
             new Identifier('test'),
             [],
             [$parameter, $parameter],
@@ -235,6 +215,29 @@ class OperationTest extends TestCase
         );
 
         self::assertEmpty($sut->getWarnings()->findByWarningCode(Warning::SIMILAR_NAMES));
+    }
+
+    #[Test]
+    #[DataProvider('provideOperationsWithoutServers')]
+    public function itCanCreateANewInstanceWithoutServers(
+        array $servers,
+        array $parameters,
+    ): void {
+        $operationWith = fn($s) => Operation::fromPartial(
+            new Identifier('test'),
+            [],
+            [],
+            Method::GET,
+            PartialHelper::createOperation(
+                servers: $s,
+                parameters: $parameters,
+            ),
+        );
+
+        self::assertEquals(
+            $operationWith([new Partial\Server('/')]),
+            $operationWith($servers)->withoutServers(),
+        );
     }
 
     public static function provideParameters(): Generator
@@ -252,7 +255,7 @@ class OperationTest extends TestCase
             PartialHelper::createOperation(
                 operationId: $operationId,
                 parameters: $operationParameters
-            )
+            ),
         ];
 
         $unique1 = PartialHelper::createParameter(name: 'unique-name-1');
@@ -312,7 +315,7 @@ class OperationTest extends TestCase
             PartialHelper::createOperation(...array_merge(
                 ['operationId' => $operationId],
                 $data
-            ))
+            )),
         ];
 
         yield 'duplicate parameters' => $case(
@@ -325,7 +328,7 @@ class OperationTest extends TestCase
                 'parameters' => array_pad([], 2, PartialHelper::createParameter(
                     name: 'duplicate',
                     in: 'path',
-                ))
+                )),
             ]
         );
     }
@@ -338,7 +341,7 @@ class OperationTest extends TestCase
         $identifier = $parentIdentifier->append($operationId, $method->value);
 
         $pathServers = [
-            new Server($parentIdentifier, PartialHelper::createServer(url: '/'))
+            new Server($parentIdentifier, PartialHelper::createServer(url: '/')),
         ];
 
         $case = fn($operationServers) => [
@@ -348,7 +351,7 @@ class OperationTest extends TestCase
             $operationId,
             $method,
             $pathServers,
-            $operationServers
+            $operationServers,
         ];
 
         yield 'no Path Item Servers' => $case([]);
@@ -356,7 +359,7 @@ class OperationTest extends TestCase
         yield 'three Path Item Servers' => $case([
             PartialHelper::createServer(url: 'https://server-one.io'),
             PartialHelper::createServer(url: 'https://server-two.co.uk'),
-            PartialHelper::createServer(url: 'https://server-three.net')
+            PartialHelper::createServer(url: 'https://server-three.net'),
         ]);
     }
 
@@ -410,5 +413,38 @@ class OperationTest extends TestCase
         yield 'similar path param names' => $case(['param', 'Param'], []);
         yield 'similar operation param names' =>  $case([], ['param', 'Param']);
         yield 'similar param names' => $case(['param'], ['Param']);
+    }
+
+    public static function provideOperationsWithoutServers(): Generator
+    {
+        yield 'default server' => [
+            [new Partial\Server('/')],
+            [],
+        ];
+
+        yield 'static server' => [
+            [new Partial\Server('hello-world.net/')],
+            [],
+        ];
+
+        yield 'multiple servers' => [
+            [
+                new Partial\Server('hello-world.net/'),
+                new Partial\Server('howdy-planet.io/'),
+            ],
+            [],
+        ];
+
+        yield 'dynamic server' => [
+            [new Partial\Server('hello-{world}.net/', [
+                new Partial\ServerVariable('world', 'world'),
+            ])],
+            [],
+        ];
+
+        yield 'parameter' => [
+            [new Partial\Server('hello-parameter.io/')],
+            [PartialHelper::createParameter()]
+        ];
     }
 }

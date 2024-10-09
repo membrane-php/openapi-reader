@@ -26,11 +26,11 @@ final class FromCebe
 
         /**
          * todo when phpstan 1.11 stable is released
-         * replace the below lines with @phpstan-ignore nullsafe.neverNull
+         * replace the below lines with phpstan-ignore nullsafe.neverNull
          * The reason for this is the cebe library does not specify that info is nullable
          * However it is not always set, so it can be null
          */
-        return new Valid\V30\OpenAPI(new OpenAPI(
+        return Valid\V30\OpenAPI::fromPartial(new OpenAPI(
             $openApi->openapi,
             $openApi->info?->title, // @phpstan-ignore-line
             $openApi->info?->version, // @phpstan-ignore-line
