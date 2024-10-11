@@ -46,7 +46,7 @@ class OpenAPITest extends TestCase
     ): void {
         self::expectExceptionObject($expected);
 
-        new OpenAPI($partialOpenAPI);
+        OpenAPI::fromPartial($partialOpenAPI);
     }
 
     #[Test]
@@ -54,7 +54,7 @@ class OpenAPITest extends TestCase
     public function itWarnsAgainstEmptyPaths(): void
     {
         $expected = [new Warning('No Paths in OpenAPI', Warning::EMPTY_PATHS)];
-        $sut = new OpenAPI(PartialHelper::createOpenAPI(paths: []));
+        $sut = OpenAPI::fromPartial(PartialHelper::createOpenAPI(paths: []));
 
         $actual = $sut->getWarnings()->findByWarningCode(Warning::EMPTY_PATHS);
 
@@ -69,7 +69,7 @@ class OpenAPITest extends TestCase
         array $expected,
         Partial\OpenAPI $openAPI,
     ): void {
-        $sut = new OpenAPI($openAPI);
+        $sut = OpenAPI::fromPartial($openAPI);
 
         self::assertEquals(
             $expected,
@@ -84,7 +84,7 @@ class OpenAPITest extends TestCase
     {
         $title = 'My API';
         $version = '1.2.1';
-        $sut = new OpenAPI(PartialHelper::createOpenAPI(
+        $sut = OpenAPI::fromPartial(PartialHelper::createOpenAPI(
             title: $title,
             version: $version,
             servers: [],
@@ -96,6 +96,25 @@ class OpenAPITest extends TestCase
         )];
 
         self::assertEquals($expected, $sut->servers);
+    }
+
+    #[Test]
+    #[DataProvider('provideOpenAPIWithoutServers')]
+    public function itCanCreateANewInstanceWithoutServers(
+        array $servers,
+        array $paths,
+    ): void {
+        $apiWith = fn($s) => OpenAPI::fromPartial(
+            PartialHelper::createOpenAPI(
+                servers: $s,
+                paths: $paths,
+            ),
+        );
+
+        self::assertEquals(
+            $apiWith([new Partial\Server('/')]),
+            $apiWith($servers)->withoutServers(),
+        );
     }
 
     /**
@@ -234,5 +253,38 @@ class OpenAPITest extends TestCase
             PartialHelper::createServer(''),
             PartialHelper::createServer('/'),
         ]);
+    }
+
+    public static function provideOpenAPIWithoutServers(): Generator
+    {
+        yield 'default server' => [
+            [new Partial\Server('/')],
+            [],
+        ];
+
+        yield 'static server' => [
+            [new Partial\Server('hello-world.net/')],
+            [],
+        ];
+
+        yield 'multiple servers' => [
+            [
+                new Partial\Server('hello-world.net/'),
+                new Partial\Server('howdy-planet.io/'),
+            ],
+            [],
+        ];
+
+        yield 'dynamic server' => [
+            [new Partial\Server('hello-{world}.net/', [
+                new Partial\ServerVariable('world', 'world'),
+            ])],
+            [],
+        ];
+
+        yield 'path item' => [
+            [new Partial\Server('hello-parameter.io/')],
+            [PartialHelper::createPathItem()]
+        ];
     }
 }

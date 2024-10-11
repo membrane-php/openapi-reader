@@ -15,53 +15,76 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class Operation extends Validated
 {
     /**
+     * @param array<int,Server> $servers
      * Optional, may be left empty.
      * If empty or unspecified, the array will contain the Path level servers
-     * @var array<int,Server>
-     */
-    public readonly array $servers;
-
-    /**
+     *
+     * @param Parameter[] $parameters
      * The list MUST NOT include duplicated parameters.
      * A unique parameter is defined by a combination of a name and location.
-     * @var Parameter[]
-     */
-    public readonly array $parameters;
-
-    /**
+     *
+     * @param string $operationId
      * Required by Membrane
      * MUST be unique, value is case-sensitive.
      */
-    public readonly string $operationId;
+    private function __construct(
+        Identifier $identifier,
+        public readonly string $operationId,
+        public readonly array $servers,
+        public readonly array $parameters,
+    ) {
+        parent::__construct($identifier);
+
+        $this->reviewServers($this->servers);
+        $this->reviewParameters($this->parameters);
+    }
+
+    public function withoutServers(): Operation
+    {
+        return new Operation(
+            $this->getIdentifier(),
+            $this->operationId,
+            [new Server($this->getIdentifier(), new Partial\Server('/'))],
+            $this->parameters,
+        );
+    }
 
     /**
      * @param Server[] $pathServers
      * @param Parameter[] $pathParameters
      */
-    public function __construct(
+    public static function fromPartial(
         Identifier $parentIdentifier,
         array $pathServers,
         array $pathParameters,
         Method $method,
         Partial\Operation $operation,
-    ) {
-        $this->operationId = $operation->operationId ??
+    ): Operation {
+        $operationId = $operation->operationId ??
             throw CannotSupport::missingOperationId(
                 $parentIdentifier->fromEnd(0) ?? '',
                 $method->value,
             );
 
-        parent::__construct($parentIdentifier->append("$this->operationId($method->value)"));
+        $identifier = $parentIdentifier->append("$operationId($method->value)");
 
-        $this->servers = $this->validateServers(
-            $this->getIdentifier(),
+        $servers = self::validateServers(
+            $identifier,
             $pathServers,
             $operation->servers,
         );
 
-        $this->parameters = $this->validateParameters(
+        $parameters = self::validateParameters(
+            $identifier,
             $pathParameters,
             $operation->parameters
+        );
+
+        return new Operation(
+            $identifier,
+            $operationId,
+            $servers,
+            $parameters,
         );
     }
 
@@ -70,7 +93,7 @@ final class Operation extends Validated
      * @param Partial\Server[] $operationServers
      * @return array<int,Server>>
      */
-    private function validateServers(
+    private static function validateServers(
         Identifier $identifier,
         array $pathServers,
         array $operationServers
@@ -84,15 +107,21 @@ final class Operation extends Validated
             $operationServers
         ));
 
-        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
-        if (count($result) !== count($uniqueURLS)) {
+        return $result;
+    }
+
+    /**
+     * @param Server[] $servers
+     */
+    private function reviewServers(array $servers): void
+    {
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $servers));
+        if (count($servers) !== count($uniqueURLS)) {
             $this->addWarning(
                 'Server URLs are not unique',
                 Warning::IDENTICAL_SERVER_URLS
             );
         }
-
-        return $result;
     }
 
     /**
@@ -100,30 +129,24 @@ final class Operation extends Validated
      * @param Partial\Parameter[] $operationParameters
      * @return Parameter[]
      */
-    private function validateParameters(
+    private static function validateParameters(
+        Identifier $identifier,
         array $pathParameters,
         array $operationParameters
     ): array {
-        $result = $this->mergeParameters($operationParameters, $pathParameters);
+        $result = self::mergeParameters(
+            $identifier,
+            $operationParameters,
+            $pathParameters
+        );
 
         foreach ($result as $index => $parameter) {
             foreach (array_slice($result, $index + 1) as $otherParameter) {
                 if ($parameter->isIdentical($otherParameter)) {
                     throw InvalidOpenAPI::duplicateParameters(
-                        $this->getIdentifier(),
+                        $identifier,
                         $parameter->getIdentifier(),
                         $otherParameter->getIdentifier(),
-                    );
-                }
-
-                if ($parameter->isSimilar($otherParameter)) {
-                    $this->addWarning(
-                        <<<TEXT
-                        'This contains confusingly similar parameter names:
-                         $parameter->name
-                         $otherParameter->name
-                        TEXT,
-                        Warning::SIMILAR_NAMES
                     );
                 }
 
@@ -139,15 +162,37 @@ final class Operation extends Validated
         return $result;
     }
 
+    /** @param array<int,Parameter> $parameters */
+    private function reviewParameters(array $parameters): void
+    {
+        foreach ($parameters as $index => $parameter) {
+            foreach (array_slice($parameters, $index + 1) as $otherParameter) {
+                if ($parameter->isSimilar($otherParameter)) {
+                    $this->addWarning(
+                        <<<TEXT
+                        'This contains confusingly similar parameter names:
+                         $parameter->name
+                         $otherParameter->name
+                        TEXT,
+                        Warning::SIMILAR_NAMES
+                    );
+                }
+            }
+        }
+    }
+
     /**
      * @param Partial\Parameter[] $operationParameters
      * @param Parameter[] $pathParameters
      * @return array<int,Parameter>
      */
-    private function mergeParameters(array $operationParameters, array $pathParameters): array
-    {
+    private static function mergeParameters(
+        Identifier $identifier,
+        array $operationParameters,
+        array $pathParameters
+    ): array {
         $result = array_map(
-            fn($p) => new Parameter($this->getIdentifier(), $p),
+            fn($p) => new Parameter($identifier, $p),
             $operationParameters
         );
 

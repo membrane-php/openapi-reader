@@ -14,56 +14,134 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class PathItem extends Validated
 {
     /**
-     * Optional, may be left empty.
-     * If empty or unspecified, the array will contain the OpenAPI level servers
-     * @var array<int,Server>
-     */
-    public readonly array $servers;
-
-    /**
+     * @param array<int,Server> $servers
+     *
+     * @param  array<int,Parameter> $parameters
      * The list MUST NOT include duplicated parameters.
      * A unique parameter is defined by a combination of a name and location.
-     * @var array<int,Parameter>
      */
-    public readonly array $parameters;
-
-    public readonly ?Operation $get;
-    public readonly ?Operation $put;
-    public readonly ?Operation $post;
-    public readonly ?Operation $delete;
-    public readonly ?Operation $options;
-    public readonly ?Operation $head;
-    public readonly ?Operation $patch;
-    public readonly ?Operation $trace;
-
-    /**
-     * @param array<int,Server> $openAPIServers
-     */
-    public function __construct(
+    private function __construct(
         Identifier $identifier,
-        array $openAPIServers,
-        Partial\PathItem $pathItem,
+        public readonly array $servers,
+        public readonly array $parameters,
+        public readonly ?Operation $get,
+        public readonly ?Operation $put,
+        public readonly ?Operation $post,
+        public readonly ?Operation $delete,
+        public readonly ?Operation $options,
+        public readonly ?Operation $head,
+        public readonly ?Operation $patch,
+        public readonly ?Operation $trace,
     ) {
         parent::__construct($identifier);
 
-        $this->servers = $this->validateServers(
+        $this->reviewServers($servers);
+        $this->reviewParameters($parameters);
+        $this->reviewOperations($this->getOperations());
+    }
+
+    public function withoutServers(): PathItem
+    {
+        return new PathItem(
+            $this->getIdentifier(),
+            [new Server(
+                new Identifier($this->getIdentifier()->fromStart() ?? ''),
+                new Partial\Server('/')
+            ),
+            ],
+            $this->parameters,
+            $this->get?->withoutServers(),
+            $this->put?->withoutServers(),
+            $this->post?->withoutServers(),
+            $this->delete?->withoutServers(),
+            $this->options?->withoutServers(),
+            $this->head?->withoutServers(),
+            $this->patch?->withoutServers(),
+            $this->trace?->withoutServers(),
+        );
+    }
+
+    /**
+     * @param array<int,Server> $openAPIServers
+     * If the pathItem does not contain servers, this will be used instead
+     */
+    public static function fromPartial(
+        Identifier $identifier,
+        array $openAPIServers,
+        Partial\PathItem $pathItem,
+    ): PathItem {
+        $servers = self::validateServers(
             $identifier,
             $openAPIServers,
             $pathItem->servers,
         );
 
-        $this->parameters = $this->validateParameters($pathItem->parameters);
+        $parameters = self::validateParameters(
+            $identifier,
+            $pathItem->parameters
+        );
 
-        $this->get = $this->validateOperation(Method::GET, $pathItem->get);
-        $this->put = $this->validateOperation(Method::PUT, $pathItem->put);
-        $this->post = $this->validateOperation(Method::POST, $pathItem->post);
-        $this->delete = $this->validateOperation(Method::DELETE, $pathItem->delete);
-        $this->options = $this->validateOperation(Method::OPTIONS, $pathItem->options);
-        $this->head = $this->validateOperation(Method::HEAD, $pathItem->head);
-        $this->patch = $this->validateOperation(Method::PATCH, $pathItem->patch);
-        $this->trace = $this->validateOperation(Method::TRACE, $pathItem->trace);
-
-        $this->checkOperations($this->getOperations());
+        return new PathItem(
+            identifier: $identifier,
+            servers: $servers,
+            parameters: $parameters,
+            get: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::GET,
+                $pathItem->get
+            ),
+            put: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::PUT,
+                $pathItem->put
+            ),
+            post: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::POST,
+                $pathItem->post
+            ),
+            delete: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::DELETE,
+                $pathItem->delete
+            ),
+            options: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::OPTIONS,
+                $pathItem->options
+            ),
+            head: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::HEAD,
+                $pathItem->head
+            ),
+            patch: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::PATCH,
+                $pathItem->patch
+            ),
+            trace: self::validateOperation(
+                $identifier,
+                $servers,
+                $parameters,
+                Method::TRACE,
+                $pathItem->trace
+            ),
+        );
     }
 
     /**
@@ -92,7 +170,7 @@ final class PathItem extends Validated
      * @param Partial\Server[] $pathServers
      * @return array<int,Server>>
      */
-    private function validateServers(
+    private static function validateServers(
         Identifier $identifier,
         array $openAPIServers,
         array $pathServers
@@ -101,30 +179,36 @@ final class PathItem extends Validated
             return $openAPIServers;
         }
 
-        $result = array_values(array_map(
+        return array_values(array_map(
             fn($s) => new Server($identifier, $s),
             $pathServers
         ));
+    }
 
-        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
-        if (count($result) !== count($uniqueURLS)) {
+    /**
+     * @param Server[] $servers
+     */
+    private function reviewServers(array $servers): void
+    {
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $servers));
+        if (count($servers) !== count($uniqueURLS)) {
             $this->addWarning(
                 'Server URLs are not unique',
                 Warning::IDENTICAL_SERVER_URLS
             );
         }
-
-        return $result;
     }
 
     /**
      * @param Partial\Parameter[] $parameters
      * @return array<int,Parameter>
      */
-    private function validateParameters(array $parameters): array
-    {
+    private static function validateParameters(
+        Identifier $identifier,
+        array $parameters
+    ): array {
         $result = array_values(array_map(
-            fn($p) => new Parameter($this->getIdentifier(), $p),
+            fn($p) => new Parameter($identifier, $p),
             $parameters
         ));
 
@@ -132,20 +216,9 @@ final class PathItem extends Validated
             foreach (array_slice($result, $index + 1) as $otherParameter) {
                 if ($parameter->isIdentical($otherParameter)) {
                     throw InvalidOpenAPI::duplicateParameters(
-                        $this->getIdentifier(),
+                        $identifier,
                         $parameter->getIdentifier(),
                         $otherParameter->getIdentifier(),
-                    );
-                }
-
-                if ($parameter->isSimilar($otherParameter)) {
-                    $this->addWarning(
-                        <<<TEXT
-                        'This contains confusingly similar parameter names:
-                         $parameter->name
-                         $otherParameter->name
-                        TEXT,
-                        Warning::SIMILAR_NAMES
                     );
                 }
             }
@@ -154,7 +227,35 @@ final class PathItem extends Validated
         return $result;
     }
 
-    private function validateOperation(
+    /**
+     * @param array<int,Parameter> $parameters
+     */
+    private function reviewParameters(array $parameters): void
+    {
+        foreach ($parameters as $index => $parameter) {
+            foreach (array_slice($parameters, $index + 1) as $other) {
+                if ($parameter->isSimilar($other)) {
+                    $this->addWarning(
+                        <<<TEXT
+                        'This contains confusingly similar parameter names:
+                         $parameter->name
+                         $other->name
+                        TEXT,
+                        Warning::SIMILAR_NAMES
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @param Server[] $servers
+     * @param Parameter[] $parameters
+     */
+    private static function validateOperation(
+        Identifier $identifier,
+        array $servers,
+        array $parameters,
         Method $method,
         ?Partial\Operation $operation
     ): ?Operation {
@@ -162,12 +263,12 @@ final class PathItem extends Validated
             return null;
         }
 
-        return new Operation(
-            $this->getIdentifier(),
-            $this->servers,
-            $this->parameters,
+        return Operation::fromPartial(
+            $identifier,
+            $servers,
+            $parameters,
             $method,
-            $operation
+            $operation,
         );
     }
 
@@ -175,7 +276,7 @@ final class PathItem extends Validated
      * Operation "method" keys mapped to Operation values
      * @param array<string,Operation> $operations
      */
-    private function checkOperations(array $operations): void
+    private function reviewOperations(array $operations): void
     {
         if (empty($operations)) {
             $this->addWarning('No Operations on Path', Warning::EMPTY_PATH);

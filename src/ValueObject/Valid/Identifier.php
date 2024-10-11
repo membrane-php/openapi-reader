@@ -16,7 +16,7 @@ final class Identifier implements Stringable
         $this->chain = [$field, ...$fields];
     }
 
-    public function append(string $primaryId, string $secondaryId = ''): self
+    public function append(string $primaryId, string $secondaryId = ''): Identifier
     {
         $field = sprintf(
             '%s%s',
@@ -24,10 +24,15 @@ final class Identifier implements Stringable
             $secondaryId === '' ? '' : "($secondaryId)"
         );
 
-        return new self(...[...$this->chain, $field]);
+        return new Identifier(...[...$this->chain, $field]);
     }
 
-    public function fromEnd(int $level): ?string
+    public function fromStart(int $level = 0): ?string
+    {
+        return $this->chain[$level] ?? null;
+    }
+
+    public function fromEnd(int $level = 0): ?string
     {
         return array_reverse($this->chain)[$level] ?? null;
     }

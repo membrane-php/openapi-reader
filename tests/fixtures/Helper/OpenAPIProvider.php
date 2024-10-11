@@ -45,7 +45,7 @@ final class OpenAPIProvider
      */
     public static function minimalV30MembraneObject(): OpenAPI
     {
-        return new OpenAPI(PartialHelper::createOpenAPI(
+        return OpenAPI::fromPartial(PartialHelper::createOpenAPI(
             openapi: '3.0.0',
             title: 'My Minimal OpenAPI',
             version: '1.0.0',
@@ -186,7 +186,7 @@ final class OpenAPIProvider
      */
     public static function detailedV30MembraneObject(): OpenAPI
     {
-        return new OpenAPI(PartialHelper::createOpenAPI(
+        return OpenAPI::fromPartial(PartialHelper::createOpenAPI(
             openapi: '3.0.0',
             title: 'My Detailed OpenAPI',
             version: '1.0.1',
