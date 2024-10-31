@@ -61,15 +61,6 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test]
-    #[TestDox('Currently only V3.0.X Membrane Objects are supported')]
-    public function itCurrentlySupportsOnlyV30(): void
-    {
-        self::expectExceptionObject(CannotSupport::membraneReaderOnlySupportsv30());
-
-        new MembraneReader([OpenAPIVersion::Version_3_1]);
-    }
-
-    #[Test]
     public function itCannotReadFilesItCannotFind(): void
     {
         $filePath = vfsStream::setup()->url() . '/openapi';
