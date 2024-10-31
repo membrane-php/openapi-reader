@@ -99,7 +99,7 @@ final class Schema extends Validated
         }
 
         if (is_array($type)) {
-            return throw InvalidOpenAPI::typeArrayInWrongVersion($this->getIdentifier());
+            throw InvalidOpenAPI::typeArrayInWrongVersion($identifier);
         }
 
         return Type::tryFromVersion(

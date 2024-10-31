@@ -13,7 +13,7 @@ final class Schema
      * @param ?self[] $oneOf
      */
     public function __construct(
-        public array|string|null $type = null,
+        public null|string|array $type = null,
         public ?array $allOf = null,
         public ?array $anyOf = null,
         public ?array $oneOf = null,
