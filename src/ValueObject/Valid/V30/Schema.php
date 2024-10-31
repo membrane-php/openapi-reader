@@ -91,10 +91,15 @@ final class Schema extends Validated
         }
     }
 
-    private function validateType(Identifier $identifier, ?string $type): ?Type
+    /** @param null|string|array<string> $type */
+    private function validateType(Identifier $identifier, null|string|array $type): ?Type
     {
         if (is_null($type)) {
             return null;
+        }
+
+        if (is_array($type)) {
+            throw InvalidOpenAPI::typeArrayInWrongVersion($identifier);
         }
 
         return Type::tryFromVersion(
