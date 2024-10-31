@@ -356,7 +356,6 @@ class MembraneReaderTest extends TestCase
         self::assertEquals($expected, $actual);
     }
 
-
     public static function provideInvalidFormatting(): Generator
     {
         yield 'Empty string to be interpreted as json' => ['', FileFormat::Json];
@@ -691,5 +690,14 @@ class MembraneReaderTest extends TestCase
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
         ];
+    }
+
+    public static function provideRealExamples(): Generator
+    {
+        yield '3.1 Train Travel API' => [
+            OpenAPIProvider::minimalV30MembraneObject(),
+            __DIR__ . '/fixtures/train-travel-api.yaml',
+        ];
+
     }
 }
