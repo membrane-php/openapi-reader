@@ -6,18 +6,21 @@ namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException};
 use Generator;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesTrainTravelApi;
 use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\MembraneReader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\V31PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use org\bovigo\vfs\vfsStream;
-use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
+use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, DataProviderExternal, Test, TestDox, UsesClass};
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -339,15 +342,21 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('provideRealExamples')]
-    public function itReadsRealExamples(OpenAPI $expected, string $filepath): void
-    {
+    #[DataProviderExternal(ProvidesTrainTravelApi::class, 'provideOperations')]
+    public function itReadsRealExamples(
+        string $filepath,
+        string $path,
+        Method $method,
+        Valid\V31\Operation|Valid\V30\Operation $expected
+    ): void {
         $sut = new MembraneReader([
             OpenAPIVersion::Version_3_0,
             OpenAPIVersion::Version_3_1,
         ]);
 
-        $actual = $sut->readFromAbsoluteFilePath($filepath);
+        $api = $sut->readFromAbsoluteFilePath($filepath);
+
+        $actual = $api->paths[$path] ?->getOperations()[$method->value];
 
         self::assertEquals($expected, $actual);
     }
@@ -686,14 +695,5 @@ class MembraneReaderTest extends TestCase
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
         ];
-    }
-
-    public static function provideRealExamples(): Generator
-    {
-        yield '3.1 Train Travel API' => [
-            OpenAPIProvider::minimalV30MembraneObject(),
-            __DIR__ . '/fixtures/train-travel-api.yaml',
-        ];
-
     }
 }

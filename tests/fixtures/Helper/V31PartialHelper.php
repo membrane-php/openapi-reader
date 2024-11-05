@@ -13,7 +13,7 @@ use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
 
-final class PartialHelper
+final class V31PartialHelper
 {
     public static function createOpenAPI(
         ?string $openapi = '3.0.0',
@@ -125,19 +125,28 @@ final class PartialHelper
     }
 
     /**
+     * @param null|array<string>|string
      * @param null|Schema[] $allOf
      * @param null|Schema[] $anyOf
      * @param null|Schema[] $oneOf
      * @return Schema
      */
     public static function createSchema(
-        ?string $type = null,
+        null|array|string $type = null,
         ?array $allOf = null,
         ?array $anyOf = null,
         ?array $oneOf = null,
+        float|int|null $exclusiveMaximum = null,
+        float|int|null $exclusiveMinimum = null,
+        float|int|null $maximum = null,
+        float|int|null $minimum = null,
     ): Schema {
         return new Schema(
             type: $type,
+            exclusiveMaximum: $exclusiveMaximum,
+            exclusiveMinimum: $exclusiveMinimum,
+            maximum: $maximum,
+            minimum: $minimum,
             allOf: $allOf,
             anyOf: $anyOf,
             oneOf: $oneOf,
