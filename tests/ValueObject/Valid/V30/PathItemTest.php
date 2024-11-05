@@ -62,7 +62,7 @@ class PathItemTest extends TestCase
             $partialExpected
         ));
 
-        $sut = new PathItem($identifier, [], $partialPathItem);
+        $sut = PathItem::fromPartial($identifier, [], $partialPathItem);
 
         self::assertEquals($expected, $sut->parameters);
     }
@@ -86,14 +86,14 @@ class PathItemTest extends TestCase
             $paramIdentifier,
         ));
 
-        new PathItem($identifier, [], $pathItem);
+        PathItem::fromPartial($identifier, [], $pathItem);
     }
 
     #[Test]
     #[TestDox('Identical names in different locations may serve a purpose')]
     public function itDoesNotWarnAgainstIdenticalNames(): void
     {
-        $sut = new PathItem(
+        $sut = PathItem::fromPartial(
             new Identifier('test-path-item'),
             [],
             PartialHelper::createPathItem(parameters: [
@@ -111,7 +111,7 @@ class PathItemTest extends TestCase
     #[TestDox('It warns that similar names, though valid, may be confusing')]
     public function itWarnsAgainstSimilarNames(): void
     {
-        $sut = new PathItem(
+        $sut = PathItem::fromPartial(
             new Identifier('test-path-item'),
             [],
             PartialHelper::createPathItem(parameters: [
@@ -133,27 +133,9 @@ class PathItemTest extends TestCase
         array $expected,
         Partial\PathItem $pathItem,
     ): void {
-        $sut = new PathItem(new Identifier('test'), [], $pathItem);
+        $sut = PathItem::fromPartial(new Identifier('test'), [], $pathItem);
 
         self::assertEquals($expected, $sut
-            ->getWarnings()
-            ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
-    }
-
-
-    #[Test]
-    #[TestDox('The OpenAPI object will already warn about its own duplicates')]
-    public function itWillNotWarnForDuplicateRootLevelServers(): void
-    {
-        $identifier = new Identifier('test');
-        $server = new Server($identifier, PartialHelper::createServer());
-        $sut = new PathItem(
-            $identifier,
-            [$server, $server],
-            PartialHelper::createPathItem()
-        );
-
-        self::assertEmpty($sut
             ->getWarnings()
             ->findByWarningCode(Warning::IDENTICAL_SERVER_URLS));
     }
@@ -166,7 +148,7 @@ class PathItemTest extends TestCase
 
         $partialPathItem = PartialHelper::createPathItem(...$operations);
 
-        $sut = new PathItem(new Identifier('test'), [], $partialPathItem);
+        $sut = PathItem::fromPartial(new Identifier('test'), [], $partialPathItem);
 
         self::assertEquals(
             new Warning(
@@ -183,7 +165,7 @@ class PathItemTest extends TestCase
     {
         $partialPathItem = PartialHelper::createPathItem();
 
-        $sut = new PathItem(new Identifier('test'), [], $partialPathItem);
+        $sut = PathItem::fromPartial(new Identifier('test'), [], $partialPathItem);
 
         self::assertEquals(
             new Warning('No Operations on Path', Warning::EMPTY_PATH),
@@ -202,12 +184,10 @@ class PathItemTest extends TestCase
         Identifier $identifier,
         array $operations,
     ): void {
-        $sut = new PathItem(
+        $sut = PathItem::fromPartial(
             $identifier,
             [],
-            PartialHelper::createPathItem(
-                ...$operations
-            )
+            PartialHelper::createPathItem(...$operations)
         );
 
         self::assertEquals($expected, $sut->getOperations());
@@ -226,7 +206,7 @@ class PathItemTest extends TestCase
         array $openapiServers,
         array $pathItemServers,
     ): void {
-        $sut = new PathItem(
+        $sut = PathItem::fromPartial(
             $identifier,
             $openapiServers,
             PartialHelper::createPathItem(
@@ -235,6 +215,27 @@ class PathItemTest extends TestCase
         );
 
         self::assertEquals(array_values($expected), $sut->servers);
+    }
+
+    #[Test]
+    #[DataProvider('newPathItemsWithoutServers')]
+    public function itCanCreateANewInstanceWithoutServers(
+        array $servers,
+        array $parameters,
+    ): void {
+        $pathWith = fn($s) => PathItem::fromPartial(
+            new Identifier('test'),
+            [],
+            PartialHelper::createPathItem(
+                servers: $s,
+                parameters: $parameters,
+            ),
+        );
+
+        self::assertEquals(
+            $pathWith([new Partial\Server('/')]),
+            $pathWith($servers)->withoutServers(),
+        );
     }
 
     public static function providePartialPathItems(): Generator
@@ -335,7 +336,7 @@ class PathItemTest extends TestCase
             operationId: "$method-id"
         );
 
-        $validOperation = fn($method) => new Operation(
+        $validOperation = fn($method) => Operation::fromPartial(
             $identifier,
             [],
             [],
@@ -407,8 +408,36 @@ class PathItemTest extends TestCase
         ]);
     }
 
-    public static function provideServersToWarnAgainst(): Generator
+    public static function newPathItemsWithoutServers(): Generator
     {
+        yield 'default server' => [
+            [new Partial\Server('/')],
+            [],
+        ];
 
+        yield 'static server' => [
+            [new Partial\Server('hello-world.net/')],
+            [],
+        ];
+
+        yield 'multiple servers' => [
+            [
+                new Partial\Server('hello-world.net/'),
+                new Partial\Server('howdy-planet.io/'),
+            ],
+            [],
+        ];
+
+        yield 'dynamic server' => [
+            [new Partial\Server('hello-{world}.net/', [
+                new Partial\ServerVariable('world', 'world'),
+            ])],
+            [],
+        ];
+
+        yield 'parameter' => [
+            [new Partial\Server('hello-parameter.io/')],
+            [PartialHelper::createParameter()]
+        ];
     }
 }

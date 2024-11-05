@@ -13,49 +13,58 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 final class OpenAPI extends Validated
 {
     /**
+     * @param array<int, Server> $servers
      * Optional, may be left empty.
      * If empty or unspecified, the array will contain the default Server.
      * The default Server has "url" === "/" and no "variables"
-     * @var array<int, Server>
-     */
-    public readonly array $servers;
-
-    /**
-     * REQUIRED
+     *
+     * @param array<string,PathItem> $paths
+     * REQUIRED:
      * It may be empty due to ACL constraints
      * The PathItem's relative endpoint key mapped to the PathItem
-     * @var array<string,PathItem>
      */
-    public readonly array $paths;
+    private function __construct(
+        Identifier $identifier,
+        public readonly array $servers,
+        public readonly array $paths
+    ) {
+        parent::__construct($identifier);
 
-    public function __construct(Partial\OpenAPI $openAPI)
+        $this->reviewServers($this->servers);
+        $this->reviewPaths($this->paths);
+    }
+
+    public function withoutServers(): OpenAPI
     {
-        if (!isset($openAPI->title) || !isset($openAPI->version)) {
-            throw InvalidOpenAPI::missingInfo();
-        }
-
-        parent::__construct(new Identifier("$openAPI->title($openAPI->version)"));
-
-        if (!isset($openAPI->openAPI)) {
-            throw InvalidOpenAPI::missingOpenAPIVersion($this->getIdentifier());
-        }
-
-        $this->servers = $this->validateServers(
+        return new OpenAPI(
             $this->getIdentifier(),
-            $openAPI->servers
+            [new Server($this->getIdentifier(), new Partial\Server('/'))],
+            array_map(fn($p) => $p->withoutServers(), $this->paths),
         );
+    }
 
-        $this->paths = $this->validatePaths(
-            $this->getIdentifier(),
-            $openAPI->paths,
-        );
+    public static function fromPartial(Partial\OpenAPI $openAPI): self
+    {
+        $identifier = new Identifier(sprintf(
+            '%s(%s)',
+            $openAPI->title ?? throw InvalidOpenAPI::missingInfo(),
+            $openAPI->version ?? throw InvalidOpenAPI::missingInfo(),
+        ));
+
+        $openAPI->openAPI ??
+            throw InvalidOpenAPI::missingOpenAPIVersion($identifier);
+
+        $servers = self::validateServers($identifier, $openAPI->servers);
+        $paths = self::validatePaths($identifier, $servers, $openAPI->paths);
+
+        return new OpenAPI($identifier, $servers, $paths);
     }
 
     /**
      * @param Partial\Server[] $servers
      * @return array<int,Server>
      */
-    private function validateServers(
+    private static function validateServers(
         Identifier $identifier,
         array $servers
     ): array {
@@ -63,36 +72,38 @@ final class OpenAPI extends Validated
             return [new Server($identifier, new Partial\Server('/'))];
         }
 
-        $result = array_values(array_map(
+        return array_values(array_map(
             fn($s) => new Server($identifier, $s),
             $servers
         ));
+    }
 
-        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $result));
-        if (count($result) !== count($uniqueURLS)) {
+    /**
+     * @param Server[] $servers
+     */
+    private function reviewServers(array $servers): void
+    {
+        $uniqueURLS = array_unique(array_map(fn($s) => $s->url, $servers));
+        if (count($servers) !== count($uniqueURLS)) {
             $this->addWarning(
                 'Server URLs are not unique',
                 Warning::IDENTICAL_SERVER_URLS
             );
         }
-
-        return $result;
     }
 
-        /**
+    /**
+     * @param Server[] $servers
      * @param null|Partial\PathItem[] $pathItems
      * @return array<string,PathItem>
      */
-    private function validatePaths(
+    private static function validatePaths(
         Identifier $identifier,
+        array $servers,
         ?array $pathItems
     ): array {
         if (is_null($pathItems)) {
             throw InvalidOpenAPI::missingPaths($identifier);
-        }
-
-        if (empty($pathItems)) {
-            $this->addWarning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
         }
 
         $result = [];
@@ -115,27 +126,37 @@ final class OpenAPI extends Validated
                 );
             }
 
-            $result[$pathItem->path] = new PathItem(
+            $result[$pathItem->path] = PathItem::fromPartial(
                 $identifier->append($pathItem->path),
-                $this->servers,
+                $servers,
                 $pathItem
             );
         }
 
-        $this->checkForEquivalentPathTemplates($result);
-        $this->checkForDuplicatedOperationIds($result);
+        self::checkForEquivalentPathTemplates($result);
+        self::checkForDuplicatedOperationIds($result);
 
         return $result;
     }
 
     /**
+     * @param PathItem[] $paths
+     */
+    private function reviewPaths(array $paths): void
+    {
+        if (empty($paths)) {
+            $this->addWarning('No Paths in OpenAPI', Warning::EMPTY_PATHS);
+        }
+    }
+
+    /**
      * @param array<string,PathItem> $pathItems
      */
-    private function checkForEquivalentPathTemplates(array $pathItems): void
+    private static function checkForEquivalentPathTemplates(array $pathItems): void
     {
         $regexToIdentifier = [];
         foreach ($pathItems as $path => $pathItem) {
-            $regex = $this->getPathRegex($path);
+            $regex = self::getPathRegex($path);
 
             if (isset($regexToIdentifier[$regex])) {
                 throw InvalidOpenAPI::equivalentTemplates(
@@ -151,7 +172,7 @@ final class OpenAPI extends Validated
     /**
      * @param PathItem[] $paths
      */
-    private function checkForDuplicatedOperationIds(array $paths): void
+    private static function checkForDuplicatedOperationIds(array $paths): void
     {
         $checked = [];
 
@@ -174,7 +195,7 @@ final class OpenAPI extends Validated
         }
     }
 
-    private function getPathRegex(string $path): string
+    private static function getPathRegex(string $path): string
     {
         $pattern = preg_replace('#{[^/]+}#', '{([^/]+)}', $path);
 

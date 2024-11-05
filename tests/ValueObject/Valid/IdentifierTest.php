@@ -60,7 +60,65 @@ class IdentifierTest extends TestCase
         self::assertSame($expected, (string)$sut);
     }
 
-    public static function provideChainsToSearchThrough(): Generator
+    /** @param string[] $chain */
+    #[Test, DataProvider('provideChainsToSearchThroughForwards')]
+    public function itGetsStringsFromStartOfChain(
+        ?string $expected,
+        int $index,
+        array $chain,
+    ): void {
+        $sut = new Identifier(...$chain);
+
+        self::assertSame($expected, $sut->fromStart($index));
+    }
+
+    /** @param string[] $chain */
+    #[Test, DataProvider('provideChainsToSearchThroughBackwards')]
+    public function itGetsStringsFromEndOfChain(
+        ?string $expected,
+        int $index,
+        array $chain,
+    ): void {
+        $sut = new Identifier(...$chain);
+
+        self::assertSame($expected, $sut->fromEnd($index));
+    }
+
+    public static function provideChainsToSearchThroughForwards(): Generator
+    {
+        yield 'single field, first field from start' => [
+            'field1',
+            0,
+            ['field1']
+        ];
+
+        yield 'single field, second field from start which should be null' => [
+            null,
+            1,
+            ['field1']
+        ];
+
+        yield 'three fields, pick the first from start' => [
+            'field1',
+            0,
+            ['field1', 'field2', 'field3']
+        ];
+
+        yield 'three fields, pick the second from start' => [
+            'field2',
+            1,
+            ['field1', 'field2', 'field3']
+        ];
+
+        yield 'three fields, pick the third from start' => [
+            'field3',
+            2,
+            ['field1', 'field2', 'field3']
+        ];
+    }
+
+
+    public static function provideChainsToSearchThroughBackwards(): Generator
     {
         yield 'single field, first field from end' => [
             'field1',
@@ -91,17 +149,5 @@ class IdentifierTest extends TestCase
             2,
             ['field1', 'field2', 'field3']
         ];
-    }
-
-    /** @param string[] $chain */
-    #[Test, DataProvider('provideChainsToSearchThrough')]
-    public function itGetsStringsFromEndOfChain(
-        ?string $expected,
-        int $index,
-        array $chain,
-    ): void {
-        $sut = new Identifier(...$chain);
-
-        self::assertSame($expected, $sut->fromEnd($index));
     }
 }
