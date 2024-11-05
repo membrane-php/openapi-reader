@@ -7,11 +7,14 @@ namespace Membrane\OpenAPIReader\Tests;
 use cebe\{openapi\exceptions as CebeException};
 use Generator;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesPetstoreApi;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesTrainTravelApi;
 use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\MembraneReader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\V31PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
@@ -341,13 +344,17 @@ class MembraneReaderTest extends TestCase
 
     #[Test]
     #[DataProviderExternal(ProvidesPetstoreApi::class, 'provideOperations')]
+    #[DataProviderExternal(ProvidesTrainTravelApi::class, 'provideOperations')]
     public function itReadsRealExamples(
         string $filepath,
         string $path,
         Method $method,
-        Valid\V30\Operation $expected
+        Valid\V31\Operation|Valid\V30\Operation $expected
     ): void {
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $api = $sut->readFromAbsoluteFilePath($filepath);
 
@@ -690,14 +697,5 @@ class MembraneReaderTest extends TestCase
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
         ];
-    }
-
-    public static function provideRealExamples(): Generator
-    {
-        yield '3.1 Train Travel API' => [
-            OpenAPIProvider::minimalV30MembraneObject(),
-            __DIR__ . '/fixtures/train-travel-api.yaml',
-        ];
-
     }
 }
