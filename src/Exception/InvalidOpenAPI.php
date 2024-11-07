@@ -301,6 +301,16 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function typeArrayInWrongVersion(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            Specifying type as an array is only valid for OpenAPI ^3.1
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function failedCebeValidation(string ...$errors): self
     {
         $message = sprintf("OpenAPI is invalid for the following reasons:\n\t- %s", implode("\n\t- ", $errors));
