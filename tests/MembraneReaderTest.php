@@ -8,6 +8,7 @@ use cebe\{openapi\exceptions as CebeException};
 use Generator;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesPetstoreApi;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesTrainTravelApi;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\V31OpenAPIProvider;
 use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
@@ -320,12 +321,17 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test, DataProvider('provideOpenAPIToRead')]
-    public function itReadsFromFile(OpenAPI $expected, string $openApi): void
-    {
+    public function itReadsFromFile(
+        Valid\V30\OpenAPI|Valid\V31\OpenAPI $expected,
+        string $openApi
+    ): void {
         $filePath = vfsStream::setup()->url() . '/openapi.json';
         file_put_contents($filePath, $openApi);
 
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $actual = $sut->readFromAbsoluteFilePath($filePath, FileFormat::Json);
 
@@ -333,9 +339,14 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test, DataProvider('provideOpenAPIToRead')]
-    public function itReadsFromString(OpenAPI $expected, string $openApi): void
-    {
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+    public function itReadsFromString(
+        Valid\V30\OpenAPI|Valid\V31\OpenAPI $expected,
+        string $openApi
+    ): void {
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $actual = $sut->readFromString($openApi, FileFormat::Json);
 
@@ -688,14 +699,24 @@ class MembraneReaderTest extends TestCase
 
     public static function provideOpenAPIToRead(): Generator
     {
-        yield 'minimal OpenAPI' => [
+        yield 'minimal V30' => [
             OpenAPIProvider::minimalV30MembraneObject(),
             OpenAPIProvider::minimalV30String(),
         ];
 
-        yield 'detailed OpenAPI' => [
+        yield 'detailed V30' => [
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
+        ];
+
+        yield 'minimal V31' => [
+            V31OpenAPIProvider::minimalV31MembraneObject(),
+            V31OpenAPIProvider::minimalV31String(),
+        ];
+
+        yield 'detailed V31' => [
+            V31OpenAPIProvider::detailedV31MembraneObject(),
+            V31OpenAPIProvider::detailedV31String(),
         ];
     }
 }
