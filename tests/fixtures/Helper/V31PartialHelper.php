@@ -12,6 +12,7 @@ use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
+use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class V31PartialHelper
 {
@@ -125,31 +126,81 @@ final class V31PartialHelper
     }
 
     /**
-     * @param null|array<string>|string
+     * @param null|array<string>|string $type
+     * @param Value[]|null $enum
      * @param null|Schema[] $allOf
      * @param null|Schema[] $anyOf
      * @param null|Schema[] $oneOf
+     * @param string[] $required
+     * @param string[][] $dependentRequired
+     * @param Schema[] $dependentSchemas
      * @return Schema
      */
     public static function createSchema(
         null|array|string $type = null,
-        ?array $allOf = null,
-        ?array $anyOf = null,
-        ?array $oneOf = null,
+        array|null $enum = null,
+        Value|null $const = null,
+        float|int|null $multipleOf = null,
         float|int|null $exclusiveMaximum = null,
         float|int|null $exclusiveMinimum = null,
         float|int|null $maximum = null,
         float|int|null $minimum = null,
+        int|null $maxLength = null,
+        int $minLength = 0,
+        string|null $pattern = null,
+        int|null $maxItems = null,
+        int $minItems = 0,
+        bool $uniqueItems = false,
+        int|null $maxContains = null,
+        int $minContains = 1,
+        int|null $maxProperties = null,
+        int $minProperties = 0,
+        array $required = [],
+        array $dependentRequired = [],
+        ?array $allOf = null,
+        ?array $anyOf = null,
+        ?array $oneOf = null,
+        Schema|null $not = null,
+        Schema|null $if = null,
+        Schema|null $then = null,
+        Schema|null $else = null,
+        array $dependentSchemas = [],
+        array $prefixItems = [],
+        Schema|null $items = null,
+        Schema|null $contains = null,
     ): Schema {
         return new Schema(
             type: $type,
+            enum: $enum,
+            const: $const,
+            multipleOf: $multipleOf,
             exclusiveMaximum: $exclusiveMaximum,
             exclusiveMinimum: $exclusiveMinimum,
             maximum: $maximum,
             minimum: $minimum,
+            maxLength: $maxLength,
+            minLength: $minLength,
+            pattern: $pattern,
+            maxItems: $maxItems,
+            minItems: $minItems,
+            uniqueItems: $uniqueItems,
+            maxContains: $maxContains,
+            minContains: $minContains,
+            maxProperties: $maxProperties,
+            minProperties: $minProperties,
+            required: $required,
+            dependentRequired: $dependentRequired,
             allOf: $allOf,
             anyOf: $anyOf,
             oneOf: $oneOf,
+            not: $not,
+            if: $if,
+            then: $then,
+            else: $else,
+            dependentSchemas: $dependentSchemas,
+            prefixItems: $prefixItems,
+            items: $items,
+            contains: $contains,
         );
     }
 }
