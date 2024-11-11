@@ -16,7 +16,7 @@
   },
   "require": {
     "php": "^8.1.0",
-    "cebe/php-openapi": "dev-fix-3.1@dev"
+    "cebe/php-openapi": "dev-all-membrane-3.1-fixes@dev"
   },
   "require-dev": {
     "phpunit/phpunit": "^10.5.36",
