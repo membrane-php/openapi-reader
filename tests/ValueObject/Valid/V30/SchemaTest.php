@@ -132,19 +132,20 @@ class SchemaTest extends TestCase
         ];
 
         $identifier = new Identifier('test-schema');
-        $case = fn(Identifier $exceptionId, Partial\Schema $schema) => [
-            InvalidOpenAPI::emptyComplexSchema($exceptionId),
+        $case = fn(Identifier $exceptionId, Partial\Schema $schema, string $keyword) => [
+            InvalidOpenAPI::mustBeNonEmpty($exceptionId, $keyword),
             $identifier,
             $schema
         ];
 
         foreach ($xOfs as $keyword => $xOf) {
-            yield "empty $keyword" => $case($identifier, $xOf());
+            yield "empty $keyword" => $case($identifier, $xOf(), $keyword);
 
             foreach ($xOfs as $otherKeyWord => $otherXOf) {
                 yield "$keyword with empty $otherKeyWord inside" => $case(
                     $identifier->append($keyword, '0'),
                     $xOf($otherXOf()),
+                    $otherKeyWord,
                 );
             }
         }

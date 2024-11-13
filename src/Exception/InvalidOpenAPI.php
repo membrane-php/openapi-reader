@@ -311,17 +311,100 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
+    public static function numericExclusiveMinMaxIn30(
+        Identifier $identifier,
+        string $keyword,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be a boolean in OpenAPI ^3.0
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function arrayItemsIn31(Identifier $identifier): self
+    {
+        $message = <<<TEXT
+            $identifier
+            items MUST be a Schema in OpenAPI ^3.1
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function boolExclusiveMinMaxIn31(
+        Identifier $identifier,
+        string $keyword,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be a number in OpenAPI ^3.1
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function keywordMustBeStrictlyPositiveNumber(
+        Identifier $identifier,
+        string $keyword,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be strictly greater than zero
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function keywordMustBeNegativeInteger(
+        Identifier $identifier,
+        string $keyword,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be greater than or equal to zero
+            TEXT;
+
+        return new self($message);
+    }
+
     public static function failedCebeValidation(string ...$errors): self
     {
         $message = sprintf("OpenAPI is invalid for the following reasons:\n\t- %s", implode("\n\t- ", $errors));
         return new self($message);
     }
 
-    public static function emptyComplexSchema(Identifier $identifier): self
-    {
+    public static function mustBeNonEmpty(
+        Identifier $identifier,
+        string $keyword
+    ): self {
         $message = <<<TEXT
             $identifier
-            complex schemas MUST have atleast one sub-schema
+            $keyword MUST be a non-empty array
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function mustContainUniqueItems(
+        Identifier $identifier,
+        string $keyword
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be an array of unique strings
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function mustSpecifyItemsForArrayType(
+        Identifier $identifier,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            items MUST be specified if type is array
             TEXT;
 
         return new self($message);
