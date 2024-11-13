@@ -6,14 +6,16 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
+use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Value;
 
-final class Schema extends Validated
+final class Schema extends Validated implements Valid\Schema
 {
     public readonly Type|null $type;
     public readonly bool $nullable;
@@ -131,6 +133,20 @@ final class Schema extends Validated
         }
 
         return false;
+    }
+
+    public function getRelevantMaximum(): ?Limit
+    {
+        return isset($this->maximum) ?
+            new Limit($this->maximum, $this->exclusiveMaximum) :
+            null;
+    }
+
+    public function getRelevantMinimum(): ?Limit
+    {
+        return isset($this->minimum) ?
+            new Limit($this->minimum, $this->exclusiveMinimum) :
+            null;
     }
 
     /** @return string[] */
