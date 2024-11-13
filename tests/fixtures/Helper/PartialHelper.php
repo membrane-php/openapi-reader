@@ -137,10 +137,10 @@ final class PartialHelper
         ?array $oneOf = null,
     ): Schema {
         return new Schema(
-            $type,
-            $allOf,
-            $anyOf,
-            $oneOf,
+            type: $type,
+            allOf: $allOf,
+            anyOf: $anyOf,
+            oneOf: $oneOf,
         );
     }
 }

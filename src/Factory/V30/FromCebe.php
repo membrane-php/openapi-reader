@@ -13,13 +13,14 @@ use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
-use Membrane\OpenAPIReader\ValueObject\Valid;
+use Membrane\OpenAPIReader\ValueObject\Valid\V30;
+use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class FromCebe
 {
     public static function createOpenAPI(
         Cebe\OpenApi $openApi
-    ): Valid\V30\OpenAPI {
+    ): V30\OpenAPI {
         $servers = count($openApi->servers) === 1 && $openApi->servers[0]->url === '/' ?
             [] :
             $openApi->servers;
@@ -30,7 +31,7 @@ final class FromCebe
          * The reason for this is the cebe library does not specify that info is nullable
          * However it is not always set, so it can be null
          */
-        return Valid\V30\OpenAPI::fromPartial(new OpenAPI(
+        return V30\OpenAPI::fromPartial(new OpenAPI(
             $openApi->openapi,
             $openApi->info?->title, // @phpstan-ignore-line
             $openApi->info?->version, // @phpstan-ignore-line
@@ -143,10 +144,47 @@ final class FromCebe
         );
 
         return new Schema(
-            $schema->type,
-            isset($schema->allOf) ? $createSchemas($schema->allOf) : null,
-            isset($schema->anyOf) ? $createSchemas($schema->anyOf) : null,
-            isset($schema->oneOf) ? $createSchemas($schema->oneOf) : null,
+            type: $schema->type,
+            enum: $schema->enum ?? null,
+            const: $schema->const ?? null,
+            default: isset($schema->default) ? new Value($schema->default) : null,
+            nullable: $schema->nullable ?? false,
+            multipleOf: $schema->multipleOf ?? null,
+            exclusiveMaximum: $schema->exclusiveMaximum ?? false,
+            exclusiveMinimum: $schema->exclusiveMinimum ?? false,
+            maximum: $schema->maximum ?? null,
+            minimum: $schema->minimum ?? null,
+            maxLength: $schema->maxLength ?? null,
+            minLength: $schema->minLength ?? 0,
+            pattern: $schema->pattern ?? null,
+            maxItems: $schema->maxItems ?? null,
+            minItems: $schema->minItems ?? 0,
+            uniqueItems: $schema->uniqueItems ?? false,
+            maxContains: $schema->maxContains ?? null,
+            minContains: $schema->minContains ?? null,
+            maxProperties: $schema->maxProperties ?? null,
+            minProperties: $schema->minProperties ?? 0,
+            required: $schema->required ?? null,
+            dependentRequired: $schema->dependentRequired ?? null,
+            allOf: isset($schema->allOf) ? $createSchemas($schema->allOf) : null,
+            anyOf: isset($schema->anyOf) ? $createSchemas($schema->anyOf) : null,
+            oneOf: isset($schema->oneOf) ? $createSchemas($schema->oneOf) : null,
+            not: isset($schema->not) ? self::createSchema($schema->not) : null,
+            if: isset($schema->if) ? self::createSchema($schema->if) : null,
+            then: isset($schema->then) ? self::createSchema($schema->then) : null,
+            else: isset($schema->else) ? self::createSchema($schema->else) : null,
+            dependentSchemas: isset($schema->dependentSchemas) ?
+                $createSchemas($schema->dependentSchemas) :
+                null,
+            items: isset($schema->items) ? (is_array($schema->items) ?
+                $createSchemas($schema->items) :
+                self::createSchema($schema->items)) :
+                null,
+            properties: isset($schema->properties) ? $createSchemas($schema->properties) : null,
+            additionalProperties: isset($schema->additionalProperties) ? (is_bool($schema->additionalProperties) ?
+                $schema->additionalProperties :
+                self::createSchema($schema->additionalProperties) ?? true) :
+                true,
         );
     }
 
