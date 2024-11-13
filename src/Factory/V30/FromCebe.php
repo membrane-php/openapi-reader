@@ -44,7 +44,7 @@ final class FromCebe
      * @param Cebe\Server[] $servers
      * @return Server[]
      */
-    private static function createServers(array $servers): array
+    public static function createServers(array $servers): array
     {
         $result = [];
 
@@ -62,7 +62,7 @@ final class FromCebe
      * @param Cebe\ServerVariable[] $serverVariables
      * @return ServerVariable[]
      */
-    private static function createServerVariables(array $serverVariables): array
+    public static function createServerVariables(array $serverVariables): array
     {
         $result = [];
 
@@ -81,7 +81,7 @@ final class FromCebe
      * @param null|Cebe\Paths<string,Cebe\PathItem> $paths
      * @return PathItem[]
      */
-    private static function createPaths(?Cebe\Paths $paths): array
+    public static function createPaths(?Cebe\Paths $paths): array
     {
         $result = [];
 
@@ -108,7 +108,7 @@ final class FromCebe
      * @param Cebe\Parameter[]|Cebe\Reference[] $parameters
      * @return Parameter[]
      */
-    private static function createParameters(array $parameters): array
+    public static function createParameters(array $parameters): array
     {
         $result = [];
 
@@ -129,7 +129,7 @@ final class FromCebe
         return $result;
     }
 
-    private static function createSchema(
+    public static function createSchema(
         Cebe\Reference|Cebe\Schema|null $schema
     ): ?Schema {
         assert(!$schema instanceof Cebe\Reference);
@@ -184,7 +184,7 @@ final class FromCebe
      * @param Cebe\MediaType[] $mediaTypes
      * @return MediaType[]
      */
-    private static function createContent(array $mediaTypes): array
+    public static function createContent(array $mediaTypes): array
     {
         $result = [];
 
@@ -202,7 +202,7 @@ final class FromCebe
         return $result;
     }
 
-    private static function createOperation(
+    public static function createOperation(
         ?Cebe\Operation $operation
     ): ?Operation {
         if (is_null($operation)) {
