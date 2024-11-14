@@ -55,6 +55,7 @@ final class Schema extends Validated implements Valid\Schema
     public readonly array|null $oneOf;
     public readonly Schema|null $not;
 
+    public readonly string|null $format;
 
     /** @var Type[] */
     private readonly array $typesItCanBe;
@@ -100,6 +101,8 @@ final class Schema extends Validated implements Valid\Schema
         $this->not = isset($schema->not) ?
             new Schema($this->getIdentifier()->append('not'), $schema->not) :
             null;
+
+        $this->format = $schema->format;
 
         $this->typesItCanBe = array_map(
             fn($t) => Type::from($t),

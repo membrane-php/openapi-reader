@@ -120,6 +120,12 @@ final class Schema
          */
         public bool|Schema $unevaluatedItems = true,
         public bool|Schema $unevaluatedProperties = true,
+
+        /**
+         * Keywords that MAY provide additional validation, depending on tool
+         * https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7
+         */
+        public string|null $format = null,
     ) {
     }
 }
