@@ -168,6 +168,7 @@ final class V31PartialHelper
         array $prefixItems = [],
         Schema|null $items = null,
         Schema|null $contains = null,
+        string|null $format = null,
     ): Schema {
         return new Schema(
             type: $type,
@@ -201,6 +202,7 @@ final class V31PartialHelper
             prefixItems: $prefixItems,
             items: $items,
             contains: $contains,
+            format: $format,
         );
     }
 }
