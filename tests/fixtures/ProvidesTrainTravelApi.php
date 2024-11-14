@@ -120,19 +120,19 @@ final class ProvidesTrainTravelApi
                     name: 'origin',
                     in: 'query',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'uuid'),
                 ),
                 new Partial\Parameter(
                     name: 'destination',
                     in: 'query',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'uuid'),
                 ),
                 new Partial\Parameter(
                     name: 'date',
                     in: 'query',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'date-time'),
                 ),
                 new Partial\Parameter(
                     name: 'bicycles',
@@ -205,7 +205,7 @@ final class ProvidesTrainTravelApi
                     name: 'bookingId',
                     in: 'path',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'uuid'),
                 )
             )],
             method: Method::GET,
@@ -227,7 +227,7 @@ final class ProvidesTrainTravelApi
                     name: 'bookingId',
                     in: 'path',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'uuid'),
                 )
             )],
             method: Method::DELETE,
@@ -255,7 +255,7 @@ final class ProvidesTrainTravelApi
                     name: 'bookingId',
                     in: 'path',
                     required: true,
-                    schema: new Partial\Schema(type: 'string'),
+                    schema: new Partial\Schema(type: 'string', format: 'uuid'),
                 )
             )],
             method: Method::POST,
