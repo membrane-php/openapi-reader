@@ -164,6 +164,12 @@ final class Schema extends Validated implements Valid\Schema
         }
     }
 
+    /** @return Type[] */
+    public function getTypes(): array
+    {
+        return $this->type;
+    }
+
     public function getRelevantMaximum(): ?Limit
     {
         if (isset($this->maximum)) {
