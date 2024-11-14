@@ -260,6 +260,10 @@ final class Schema extends Validated implements Valid\Schema
             $type = [$type];
         }
 
+        if (count($type) !== count(array_unique($type))) {
+            throw InvalidOpenAPI::mustContainUniqueItems($identifier, 'type');
+        }
+
         return array_map(
             fn($t) => Type::tryFromVersion(OpenAPIVersion::Version_3_1, $t) ??
                 throw InvalidOpenAPI::invalidType($identifier, $t),
