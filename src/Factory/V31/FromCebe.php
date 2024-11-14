@@ -180,11 +180,8 @@ final class FromCebe
             dependentSchemas: isset($schema->dependentSchemas) ?
                 $createSchemas($schema->dependentSchemas) :
                 null,
-            items: isset($schema->items) ? (is_array($schema->items) ?
-                $createSchemas($schema->items) :
-                self::createSchema($schema->items)) :
-                null,
-            properties: isset($schema->properties) ? $createSchemas($schema->properties) : null,
+            items: isset($schema->items) ? self::createSchema($schema->items) : null,
+            properties: isset($schema->properties) ? $createSchemas($schema->properties) : [],
             additionalProperties: is_bool($schema->additionalProperties) ?
                 $schema->additionalProperties :
                 self::createSchema($schema->additionalProperties) ?? true,
