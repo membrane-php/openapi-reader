@@ -12,6 +12,7 @@ use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
+use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class PartialHelper
 {
@@ -125,22 +126,67 @@ final class PartialHelper
     }
 
     /**
+     * @param null|Value[] $enum
      * @param null|Schema[] $allOf
      * @param null|Schema[] $anyOf
      * @param null|Schema[] $oneOf
+     * @param Schema[] $properties
+     * @param null|string[] $required
      * @return Schema
      */
     public static function createSchema(
-        ?string $type = null,
-        ?array $allOf = null,
-        ?array $anyOf = null,
-        ?array $oneOf = null,
+        string|null $type = null,
+        bool $nullable = false,
+        array|null $enum = null,
+        Value|null $default = null,
+        float|int|null $multipleOf = null,
+        float|int|null $maximum = null,
+        float|int|null $minimum = null,
+        bool $exclusiveMaximum = false,
+        bool $exclusiveMinimum = false,
+        int|null $maxLength = null,
+        int $minLength = 0,
+        string|null $pattern = null,
+        int|null $maxItems = null,
+        int $minItems = 0,
+        bool $uniqueItems = false,
+        int|null $maxProperties = null,
+        int $minProperties = 0,
+        array|null $required = null,
+        Schema|null $items = null,
+        array $properties = [],
+        array|null $allOf = null,
+        array|null $anyOf = null,
+        array|null $oneOf = null,
+        Schema|null $not = null,
+        string|null $format = null,
     ): Schema {
         return new Schema(
             type: $type,
+            enum: $enum,
+            default: $default,
+            nullable: $nullable,
+            multipleOf: $multipleOf,
+            exclusiveMaximum: $exclusiveMaximum,
+            exclusiveMinimum: $exclusiveMinimum,
+            maximum: $maximum,
+            minimum: $minimum,
+            maxLength: $maxLength,
+            minLength: $minLength,
+            pattern: $pattern,
+            maxItems: $maxItems,
+            minItems: $minItems,
+            uniqueItems: $uniqueItems,
+            maxProperties: $maxProperties,
+            minProperties: $minProperties,
+            required: $required,
             allOf: $allOf,
             anyOf: $anyOf,
             oneOf: $oneOf,
+            not: $not,
+            items: $items,
+            properties: $properties,
+            format: $format,
         );
     }
 }
