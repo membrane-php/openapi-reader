@@ -145,7 +145,9 @@ final class FromCebe
 
         return new Schema(
             type: $schema->type,
-            enum: $schema->enum ?? null,
+            enum: isset($schema->enum) ?
+                array_map(fn($e) => new Value($e), $schema->enum) :
+                null,
             default: isset($schema->default) ? new Value($schema->default) : null,
             nullable: $schema->nullable ?? false,
             multipleOf: $schema->multipleOf ?? null,
