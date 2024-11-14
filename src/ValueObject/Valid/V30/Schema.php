@@ -33,8 +33,8 @@ final class Schema extends Validated implements Valid\Schema
     public readonly int $minLength;
     public readonly string|null $pattern;
 
-    /** @var array<Schema>|Schema|null  */
-    public readonly array|Schema|null $items;
+    /** @var Schema|null  */
+    public readonly Schema|null $items;
     public readonly int|null $maxItems;
     public readonly int $minItems;
     public readonly bool $uniqueItems;
@@ -315,10 +315,6 @@ final class Schema extends Validated implements Valid\Schema
             //}
 
             return $items;
-        }
-
-        if (is_array($items)) {
-            return $this->validateSubSchemas('items', $items);
         }
 
         return new Schema($this->getIdentifier()->append('items'), $items);
