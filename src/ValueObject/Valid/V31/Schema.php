@@ -6,14 +6,16 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid\V31;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
+use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Value;
 
-final class Schema extends Validated
+final class Schema extends Validated implements Valid\Schema
 {
     /** @var Type[] */
     public readonly array $type;
@@ -156,6 +158,38 @@ final class Schema extends Validated
                 Warning::IMPOSSIBLE_SCHEMA
             );
         }
+    }
+
+    public function getRelevantMaximum(): ?Limit
+    {
+        if (isset($this->maximum)) {
+            if (isset($this->exclusiveMaximum) && $this->exclusiveMaximum <= $this->maximum) {
+                return new Limit($this->exclusiveMaximum, true);
+            }
+            return new Limit($this->maximum, false);
+        }
+
+        if (isset($this->exclusiveMaximum)) {
+            return new Limit($this->exclusiveMaximum, true);
+        }
+
+        return null;
+    }
+
+    public function getRelevantMinimum(): ?Limit
+    {
+        if (isset($this->minimum)) {
+            if (isset($this->exclusiveMinimum) && $this->exclusiveMinimum >= $this->minimum) {
+                return new Limit($this->exclusiveMinimum, true);
+            }
+            return new Limit($this->minimum, false);
+        }
+
+        if (isset($this->exclusiveMinimum)) {
+            return new Limit($this->exclusiveMinimum, true);
+        }
+
+        return null;
     }
 
     public function canBe(Type $type): bool
