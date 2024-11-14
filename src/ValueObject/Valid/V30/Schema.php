@@ -138,6 +138,20 @@ final class Schema extends Validated implements Valid\Schema
         return false;
     }
 
+    /** @return Type[] */
+    public function getTypes(): array
+    {
+        $result = isset($this->type) ?
+            [$this->type] :
+            Type::casesForVersion(OpenAPIVersion::Version_3_0);
+
+        if ($this->nullable) {
+            $result[] = Type::Null;
+        }
+
+        return $result;
+    }
+
     public function getRelevantMaximum(): ?Limit
     {
         return isset($this->maximum) ?

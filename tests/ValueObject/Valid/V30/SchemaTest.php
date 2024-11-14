@@ -139,6 +139,19 @@ class SchemaTest extends TestCase
         self::assertEquals($expected, $sut->getRelevantMinimum());
     }
 
+    /**
+     * @param Type[] $expected
+     */
+    #[Test]
+    #[TestDox('It gets the types allowed, in a version agnostic format')]
+    #[DataProvider('provideSchemasToGetTypes')]
+    public function itGetsTypes(array $expected, Partial\Schema $schema): void
+    {
+        $sut = new Schema(new Identifier(''), $schema);
+
+        self::assertEqualsCanonicalizing($expected, $sut->getTypes());
+    }
+
     public static function provideInvalidComplexSchemas(): Generator
     {
         $xOfs = [
@@ -449,6 +462,57 @@ class SchemaTest extends TestCase
                 maximum: 5,
                 minimum: 1,
             ),
+        ];
+    }
+
+    /**
+     * @return \Generator<array{ 0:Type[], 1:Partial\Schema }>
+     */
+    public static function provideSchemasToGetTypes(): Generator
+    {
+        yield 'no type' => [
+            Type::casesForVersion(OpenAPIVersion::Version_3_0),
+            PartialHelper::createSchema(),
+        ];
+
+        yield 'nullable' => [
+            [Type::Null, ...Type::casesForVersion(OpenAPIVersion::Version_3_0)],
+            PartialHelper::createSchema(nullable: true)
+        ];
+
+        yield 'string' => [[Type::String], PartialHelper::createSchema(type: 'string')];
+        yield 'integer' => [[Type::Integer], PartialHelper::createSchema(type: 'integer')];
+        yield 'number' => [[Type::Number], PartialHelper::createSchema(type: 'number')];
+        yield 'boolean' => [[Type::Boolean], PartialHelper::createSchema(type: 'boolean')];
+        yield 'array' => [
+            [Type::Array],
+            PartialHelper::createSchema(type: 'array', items: PartialHelper::createSchema()),
+        ];
+        yield 'object' => [[Type::Object], PartialHelper::createSchema(type: 'object')];
+
+        yield 'nullable string' => [
+            [Type::String, Type::Null],
+            PartialHelper::createSchema(type: 'string', nullable: true),
+        ];
+        yield 'nullable integer' => [
+            [Type::Integer, Type::Null],
+            PartialHelper::createSchema(type: 'integer', nullable: true),
+        ];
+        yield 'nullable number' => [
+            [Type::Number, Type::Null],
+            PartialHelper::createSchema(type: 'number', nullable: true),
+        ];
+        yield 'nullable boolean' => [
+            [Type::Boolean, Type::Null],
+            PartialHelper::createSchema(type: 'boolean', nullable: true),
+        ];
+        yield 'nullable array' => [
+            [Type::Array, Type::Null],
+            PartialHelper::createSchema(type: 'array', nullable: true, items: PartialHelper::createSchema()),
+        ];
+        yield 'nullable object' => [
+            [Type::Object, Type::Null],
+            PartialHelper::createSchema(type: 'object', nullable: true),
         ];
     }
 }
