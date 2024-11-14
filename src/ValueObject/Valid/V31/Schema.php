@@ -75,6 +75,8 @@ final class Schema extends Validated implements Valid\Schema
     public readonly Schema|bool $unevaluatedItems; //ommited should be empty Schema, but we require types.
     public readonly Schema|bool $unevaluatedProperties; //ommited should be empty Schema, but we require types.
 
+    public readonly string|null $format;
+
     /** @var Type[] */
     private readonly array $typesItCanBe;
 
@@ -148,6 +150,8 @@ final class Schema extends Validated implements Valid\Schema
         $this->unevaluatedProperties = is_bool($schema->unevaluatedProperties) ?
             $schema->unevaluatedProperties :
             new Schema($this->getIdentifier()->append('additionalProperties'), $schema->unevaluatedProperties);
+
+        $this->format = $schema->format;
 
         $this->typesItCanBe = array_map(fn($t) => Type::from($t), $this
             ->typesItCanBe());
