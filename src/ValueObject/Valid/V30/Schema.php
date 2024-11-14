@@ -300,14 +300,8 @@ final class Schema extends Validated implements Valid\Schema
         return $result;
     }
 
-    /**
-     * @param array<Partial\Schema>|Partial\Schema|null $items
-     * @return array<Schema>|Schema|null
-     */
-    private function validateItems(
-        Type|null $type,
-        array|Partial\Schema|null $items,
-    ): array|Schema|null {
+    private function validateItems(Type|null $type, Partial\Schema|null $items): Schema|null
+    {
         if (is_null($items)) {
             //@todo update tests to support this validation
             //if ($type == Type::Array) {
