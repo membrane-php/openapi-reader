@@ -33,8 +33,8 @@ final class Schema extends Validated implements Valid\Schema
     public readonly int $minLength;
     public readonly string|null $pattern;
 
-    /** @var array<Schema>|Schema|null  */
-    public readonly array|Schema|null $items;
+    /** @var Schema|null  */
+    public readonly Schema|null $items;
     public readonly int|null $maxItems;
     public readonly int $minItems;
     public readonly bool $uniqueItems;
@@ -55,6 +55,7 @@ final class Schema extends Validated implements Valid\Schema
     public readonly array|null $oneOf;
     public readonly Schema|null $not;
 
+    public readonly string|null $format;
 
     /** @var Type[] */
     private readonly array $typesItCanBe;
@@ -100,6 +101,8 @@ final class Schema extends Validated implements Valid\Schema
         $this->not = isset($schema->not) ?
             new Schema($this->getIdentifier()->append('not'), $schema->not) :
             null;
+
+        $this->format = $schema->format;
 
         $this->typesItCanBe = array_map(
             fn($t) => Type::from($t),
@@ -297,14 +300,8 @@ final class Schema extends Validated implements Valid\Schema
         return $result;
     }
 
-    /**
-     * @param array<Partial\Schema>|Partial\Schema|null $items
-     * @return array<Schema>|Schema|null
-     */
-    private function validateItems(
-        Type|null $type,
-        array|Partial\Schema|null $items,
-    ): array|Schema|null {
+    private function validateItems(Type|null $type, Partial\Schema|null $items): Schema|null
+    {
         if (is_null($items)) {
             //@todo update tests to support this validation
             //if ($type == Type::Array) {
@@ -312,10 +309,6 @@ final class Schema extends Validated implements Valid\Schema
             //}
 
             return $items;
-        }
-
-        if (is_array($items)) {
-            return $this->validateSubSchemas('items', $items);
         }
 
         return new Schema($this->getIdentifier()->append('items'), $items);

@@ -98,17 +98,16 @@ final class Schema
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subschema
          */
         /** @var array<Schema> */
-        public array|null $prefixItems = null,
-        /** @var array<Schema>|Schema|null */
-        public array|Schema|null $items = null,
+        public array $prefixItems = [],
+        public Schema|null $items = null,
         public Schema|null $contains = null,
         /**
          * Keywords for applying subschemas to arrays
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subschemas
          */
-        /** @var array<string, Schema>|null */
-        public array|null $properties = [],
+        /** @var array<string, Schema> */
+        public array $properties = [],
         /** @var array<string, Schema> */
         public array $patternProperties = [],
         public bool|Schema $additionalProperties = true,
@@ -120,6 +119,11 @@ final class Schema
          */
         public bool|Schema $unevaluatedItems = true,
         public bool|Schema $unevaluatedProperties = true,
+        /**
+         * Keywords that MAY provide additional validation, depending on tool
+         * https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7
+         */
+        public string|null $format = null,
     ) {
     }
 }

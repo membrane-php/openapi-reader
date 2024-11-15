@@ -8,6 +8,7 @@ use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
+use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
@@ -18,6 +19,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
@@ -115,6 +117,26 @@ class SchemaTest extends TestCase
             $expected,
             $sut->getWarnings()->hasWarningCode(Warning::IMPOSSIBLE_SCHEMA)
         );
+    }
+
+    #[Test]
+    #[TestDox('It determines the relevant numeric inclusive|exclusive maximum, if there is one')]
+    #[DataProvider('provideSchemasWithMax')]
+    public function itGetsRelevantMaximum(?Limit $expected, Partial\Schema $schema): void
+    {
+        $sut = new Schema(new Identifier(''), $schema);
+
+        self::assertEquals($expected, $sut->getRelevantMaximum());
+    }
+
+    #[Test]
+    #[TestDox('It determines the relevant numeric inclusive|exclusive minimum, if there is one')]
+    #[DataProvider('provideSchemasWithMin')]
+    public function itGetsRelevantMinimum(?Limit $expected, Partial\Schema $schema): void
+    {
+        $sut = new Schema(new Identifier(''), $schema);
+
+        self::assertEquals($expected, $sut->getRelevantMinimum());
     }
 
     public static function provideInvalidComplexSchemas(): Generator
@@ -290,5 +312,143 @@ class SchemaTest extends TestCase
               $dataSet[2]
             ];
         }
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: ?Limit,
+     *     1: Partial\Schema
+     * }>
+     */
+    public static function provideSchemasWithMax(): Generator
+    {
+        yield 'no min or max' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: null,
+                minimum: null,
+            ),
+        ];
+
+        yield 'inclusive min' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: null,
+                minimum: 1,
+            ),
+        ];
+
+        yield 'exclusive min' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: true,
+                maximum: null,
+                minimum: 1,
+            ),
+        ];
+
+        yield 'inclusive max' => [
+            new Limit(1, false),
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: 1,
+                minimum: null,
+            ),
+        ];
+
+        yield 'exclusive max' => [
+            new Limit(1, true),
+            PartialHelper::createSchema(
+                exclusiveMaximum: true,
+                exclusiveMinimum: false,
+                maximum: 1,
+                minimum: null,
+            ),
+        ];
+
+        yield 'inclusive max and exclusive min' => [
+            new Limit(5, false),
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: true,
+                maximum: 5,
+                minimum: 1,
+            ),
+        ];
+    }
+
+    /**
+     * @return Generator<array{
+     *     0: ?Limit,
+     *     1: Partial\Schema
+     * }>
+     */
+    public static function provideSchemasWithMin(): Generator
+    {
+        yield 'no min or max' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: null,
+                minimum: null,
+            ),
+        ];
+
+        yield 'inclusive min' => [
+            new Limit(1, false),
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: null,
+                minimum: 1,
+            ),
+        ];
+
+        yield 'exclusive min' => [
+            new Limit(1, true),
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: true,
+                maximum: null,
+                minimum: 1,
+            ),
+        ];
+
+        yield 'inclusive max' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: false,
+                maximum: 1,
+                minimum: null,
+            ),
+        ];
+
+        yield 'exclusive max' => [
+            null,
+            PartialHelper::createSchema(
+                exclusiveMaximum: true,
+                exclusiveMinimum: false,
+                maximum: 1,
+                minimum: null,
+            ),
+        ];
+
+        yield 'inclusive max and exclusive min' => [
+            new Limit(1, true),
+            PartialHelper::createSchema(
+                exclusiveMaximum: false,
+                exclusiveMinimum: true,
+                maximum: 5,
+                minimum: 1,
+            ),
+        ];
     }
 }
