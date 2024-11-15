@@ -17,8 +17,8 @@ use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class Schema extends Validated implements Valid\Schema
 {
-    /** @var Type[] */
-    public readonly array $type;
+    /** @var Type[]|null */
+    public readonly array|null $type;
     /** @var array<Value>|null  */
     public readonly array|null $enum;
     public readonly Value|null $const;
@@ -167,7 +167,7 @@ final class Schema extends Validated implements Valid\Schema
     /** @return Type[] */
     public function getTypes(): array
     {
-        return $this->type;
+        return $this->type ?? Type::casesForVersion(OpenAPIVersion::Version_3_1);
     }
 
     public function getRelevantMaximum(): ?Limit
@@ -258,12 +258,12 @@ final class Schema extends Validated implements Valid\Schema
 
     /**
      * @param null|string|array<string> $type
-     * @return Type[]
+     * @return Type[]|null
      */
-    private function validateType(Identifier $identifier, null|string|array $type): array
+    private function validateType(Identifier $identifier, null|string|array $type): array|null
     {
         if (is_null($type)) {
-            return [];
+            return null;
         }
 
         if (is_string($type)) {
