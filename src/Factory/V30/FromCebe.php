@@ -175,6 +175,8 @@ final class FromCebe
                 self::createSchema($schema->additionalProperties) ?? true) :
                 true,
             format: $schema->format ?? null,
+            title: $schema->title ?? null,
+            description: $schema->description ?? null,
         );
     }
 
