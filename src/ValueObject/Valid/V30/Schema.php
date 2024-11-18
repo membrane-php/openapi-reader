@@ -296,17 +296,24 @@ final class Schema extends Validated implements Valid\Schema
     }
 
     /**
-     * @param null|array<Partial\Schema> $subSchemas
-     * @return array<Schema>
+     * @param array<string, Partial\Schema> $properties
+     * @return array<string, Schema>
      */
-    private function validateProperties(?array $subSchemas): array
+    private function validateProperties(?array $properties): array
     {
-        $subSchemas ??= [];
+        $properties ??= [];
 
         $result = [];
-        foreach ($subSchemas as $index => $subSchema) {
-            $result[] = new Schema(
-                $this->getIdentifier()->append("properties($index)"),
+        foreach ($properties as $key => $subSchema) {
+            if (!is_string($key)) {
+                throw InvalidOpenAPI::mustHaveStringKeys(
+                    $this->getIdentifier(),
+                    'properties',
+                );
+            }
+
+            $result[$key] = new Schema(
+                $this->getIdentifier()->append("properties($key)"),
                 $subSchema
             );
         }

@@ -33,8 +33,9 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Warnings::class)]
 class SchemaTest extends TestCase
 {
-    #[Test, DataProvider('provideInvalidComplexSchemas')]
-    public function itInvalidatesEmptyComplexSchemas(
+    #[Test]
+    #[DataProvider('provideInvalidSchemas')]
+    public function itThrowsOnInvalidSchemas(
         InvalidOpenAPI $expected,
         Identifier $identifier,
         Partial\Schema $partialSchema,
@@ -42,19 +43,6 @@ class SchemaTest extends TestCase
         self::expectExceptionObject($expected);
 
         new Schema($identifier, $partialSchema);
-    }
-
-    #[Test]
-    public function itInvalidatesInvalidTypes(): void
-    {
-        $identifier = new Identifier('');
-        $schema = PartialHelper::createSchema(type: 'invalid');
-
-
-
-        self::expectExceptionObject(InvalidOpenAPI::invalidType($identifier, 'invalid'));
-
-        new Schema($identifier, $schema);
     }
 
     /** @param Type[] $typesItCanBe */
@@ -152,7 +140,29 @@ class SchemaTest extends TestCase
         self::assertEqualsCanonicalizing($expected, $sut->getTypes());
     }
 
-    public static function provideInvalidComplexSchemas(): Generator
+    public static function provideInvalidSchemas(): Generator
+    {
+        foreach (self::provideInvalidComplexSchemas() as $case => $dataset) {
+            yield $case => $dataset;
+        }
+
+        yield 'invalid type' => [
+            InvalidOpenAPI::invalidType(new Identifier('invalid type'), 'invalid'),
+            new Identifier('invalid type'),
+            new Partial\Schema(type: 'invalid'),
+        ];
+
+        yield 'properties list' => [
+            InvalidOpenAPI::mustHaveStringKeys(
+                new Identifier('properties list'),
+                'properties',
+            ),
+            new Identifier('properties list'),
+            new Partial\Schema(properties: [new Partial\Schema()]),
+        ];
+    }
+
+    private static function provideInvalidComplexSchemas(): Generator
     {
         $xOfs = [
             'allOf' => fn(Partial\Schema ...$subSchemas) => PartialHelper::createSchema(
