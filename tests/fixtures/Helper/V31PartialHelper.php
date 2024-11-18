@@ -169,6 +169,8 @@ final class V31PartialHelper
         Schema|null $items = null,
         Schema|null $contains = null,
         string|null $format = null,
+        string|null $title = null,
+        string|null $description = null,
     ): Schema {
         return new Schema(
             type: $type,
@@ -203,6 +205,8 @@ final class V31PartialHelper
             items: $items,
             contains: $contains,
             format: $format,
+            title: $title,
+            description: $description,
         );
     }
 }
