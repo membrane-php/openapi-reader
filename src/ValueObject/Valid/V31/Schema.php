@@ -129,7 +129,7 @@ final class Schema extends Validated implements Valid\Schema
         $this->else = isset($schema->else) ?
             new Schema($this->getIdentifier()->append('else'), $schema->else) :
             null;
-        $this->dependentSchemas = $this->validateSubSchemas('dependentSchemas', $schema->dependentSchemas);
+        $this->dependentSchemas = $this->validateStringKeySchemaArray('dependentSchemas', $schema->dependentSchemas);
 
         $this->prefixItems = $this->validateSubSchemas('prefixItems', $schema->prefixItems);
         $this->items = $this->validateItems($schema->items);
@@ -137,8 +137,8 @@ final class Schema extends Validated implements Valid\Schema
             new Schema($this->getIdentifier()->append('contains'), $schema->contains) :
             null;
 
-        $this->properties = $this->validateSubSchemas('properties', $schema->properties);
-        $this->patternProperties = $this->validateSubSchemas('patternProperties', $schema->patternProperties);
+        $this->properties = $this->validateStringKeySchemaArray('properties', $schema->properties);
+        $this->patternProperties = $this->validateStringKeySchemaArray('patternProperties', $schema->patternProperties);
         $this->additionalProperties = is_bool($schema->additionalProperties) ?
             $schema->additionalProperties :
             new Schema($this->getIdentifier()->append('additionalProperties'), $schema->additionalProperties);
@@ -388,9 +388,35 @@ final class Schema extends Validated implements Valid\Schema
         $subSchemas ??= [];
 
         $result = [];
-        foreach ($subSchemas as $index => $subSchema) {
-            $result[$index] = new Schema(
-                $this->getIdentifier()->append("$keyword($index)"),
+        foreach ($subSchemas as $key => $subSchema) {
+            $result[$key] = new Schema(
+                $this->getIdentifier()->append("$keyword($key)"),
+                $subSchema
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param null|array<Partial\Schema> $subSchemas
+     * @return array<Schema>
+     */
+    private function validateStringKeySchemaArray(string $keyword, ?array $subSchemas): array
+    {
+        $subSchemas ??= [];
+
+        $result = [];
+        foreach ($subSchemas as $key => $subSchema) {
+            if (!is_string($key)) {
+                throw InvalidOpenAPI::mustHaveStringKeys(
+                    $this->getIdentifier(),
+                    $keyword,
+                );
+            }
+
+            $result[$key] = new Schema(
+                $this->getIdentifier()->append("$keyword($key)"),
                 $subSchema
             );
         }
