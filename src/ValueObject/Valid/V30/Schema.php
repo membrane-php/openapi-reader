@@ -57,6 +57,9 @@ final class Schema extends Validated implements Valid\Schema
 
     public readonly string|null $format;
 
+    public readonly string|null $title;
+    public readonly string|null $description;
+
     /** @var Type[] */
     private readonly array $typesItCanBe;
 
@@ -103,6 +106,9 @@ final class Schema extends Validated implements Valid\Schema
             null;
 
         $this->format = $schema->format;
+
+        $this->title = $schema->title;
+        $this->description = $schema->description;
 
         $this->typesItCanBe = array_map(
             fn($t) => Type::from($t),
