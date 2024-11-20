@@ -187,7 +187,76 @@ final class ProvidesTrainTravelApi
             )],
             pathParameters: [],
             method: Method::POST,
-            operation: new Partial\Operation('create-booking', [], [])
+            operation: new Partial\Operation(
+                operationId: 'create-booking',
+                servers: [],
+                parameters: [],
+                requestBody: new Partial\RequestBody(
+                    content: [
+                        new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                properties: [
+                                     'id' => new Partial\Schema(
+                                         type: 'string',
+                                         format: 'uuid',
+                                         description: 'Unique identifier for the booking',
+                                     ),
+                                     'trip_id' => new Partial\Schema(
+                                         type: 'string',
+                                         format: 'uuid',
+                                         description: 'Identifier of the booked trip',
+                                     ),
+                                     'passenger_name' => new Partial\Schema(
+                                         type: 'string',
+                                         description: 'Name of the passenger',
+                                     ),
+                                     'has_bicycle' => new Partial\Schema(
+                                         type: 'boolean',
+                                         description: 'Indicates whether the passenger has a bicycle.',
+                                     ),
+                                     'has_dog' => new Partial\Schema(
+                                         type: 'boolean',
+                                         description: 'Indicates whether the passenger has a dog.',
+                                     ),
+                                 ],
+                            ),
+                        ),
+                        new Partial\MediaType(
+                            contentType: 'application/xml',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                properties: [
+                                     'id' => new Partial\Schema(
+                                         type: 'string',
+                                         format: 'uuid',
+                                         description: 'Unique identifier for the booking',
+                                     ),
+                                     'trip_id' => new Partial\Schema(
+                                         type: 'string',
+                                         format: 'uuid',
+                                         description: 'Identifier of the booked trip',
+                                     ),
+                                     'passenger_name' => new Partial\Schema(
+                                         type: 'string',
+                                         description: 'Name of the passenger',
+                                     ),
+                                     'has_bicycle' => new Partial\Schema(
+                                         type: 'boolean',
+                                         description: 'Indicates whether the passenger has a bicycle.',
+                                     ),
+                                     'has_dog' => new Partial\Schema(
+                                         type: 'boolean',
+                                         description: 'Indicates whether the passenger has a dog.',
+                                     ),
+                                 ],
+                            ),
+                        ),
+                    ],
+                    required: true,
+                )
+            )
         );
     }
 
@@ -259,7 +328,151 @@ final class ProvidesTrainTravelApi
                 )
             )],
             method: Method::POST,
-            operation: new Partial\Operation('create-booking-payment', [], [])
+            operation: new Partial\Operation(
+                operationId: 'create-booking-payment',
+                servers: [],
+                parameters: [],
+                requestBody: new Partial\RequestBody(
+                    content: [
+                        new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                properties: [
+                                     'id' => new Partial\Schema(
+                                         type: 'string',
+                                         format: 'uuid',
+                                         description: 'Unique identifier for the payment. This will be a unique identifier for the payment, and is used to reference the payment in other objects.',
+                                     ),
+                                     'amount' => new Partial\Schema(
+                                         type: 'number',
+                                         exclusiveMinimum: 0,
+                                         description: 'Amount intended to be collected by this payment. A positive decimal figure describing the amount to be collected.',
+                                     ),
+                                     'source' => new Partial\Schema(
+                                         oneOf: [
+                                             new Partial\Schema(
+                                                 type: 'object',
+                                                 required: [
+                                                     'name',
+                                                     'number',
+                                                     'cvc',
+                                                     'exp_month',
+                                                     'exp_year',
+                                                     'address_country',
+                                                 ],
+                                                 properties:[
+                                                     'object' => new Partial\Schema(
+                                                         type: 'string',
+                                                         const: new Value('card'),
+                                                     ),
+                                                     'name' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'Cardholder\'s full name as it appears on the card.',
+                                                     ),
+                                                     'number' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'The card number, as a string without any separators. On read all but the last four digits will be masked for security.',
+                                                     ),
+                                                     'cvc' => new Partial\Schema(
+                                                         type: 'integer',
+                                                         maxLength: 4,
+                                                         minLength: 3,
+                                                         description: 'Card security code, 3 or 4 digits usually found on the back of the card.',
+                                                     ),
+                                                     'exp_month' => new Partial\Schema(
+                                                         type: 'integer',
+                                                         format: 'int64',
+                                                         description: 'Two-digit number representing the card\'s expiration month.',
+                                                     ),
+                                                     'exp_year' => new Partial\Schema(
+                                                         type: 'integer',
+                                                         format: 'int64',
+                                                         description: 'Four-digit number representing the card\'s expiration year.'
+                                                     ),
+                                                     'address_line1' => new Partial\Schema(type: 'string'),
+                                                     'address_line2' => new Partial\Schema(type: 'string'),
+                                                     'address_city' => new Partial\Schema(type: 'string'),
+                                                     'address_country' => new Partial\Schema(type: 'string'),
+                                                     'address_post_code' => new Partial\Schema(type: 'string'),
+                                                 ],
+                                                 title: 'Card',
+                                                 description: 'A card (debit or credit) to take payment from.',
+                                             ),
+                                             new Partial\Schema(
+                                                 type: ['object'],
+                                                 required: [
+                                                     'name',
+                                                     'number',
+                                                     'account_type',
+                                                     'bank_name',
+                                                     'country',
+                                                 ],
+                                                 properties: [
+                                                     'object' => new Partial\Schema(type: 'string', const: new Value('bank_account')),
+                                                     'name' => new Partial\Schema(type: 'string'),
+                                                     'number' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'The account number for the bank account, in string form. Must be a current account.',
+                                                     ),
+                                                     'sort_code' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'The sort code for the bank account, in string form. Must be a six-digit number.',
+                                                     ),
+                                                     'account_type' => new Partial\Schema(
+                                                         type: 'string',
+                                                         enum: [new Value('individual'), new Value('company')],
+                                                         description: 'The type of entity that holds the account. This can be either `individual` or `company`.',
+                                                     ),
+                                                     'bank_name' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'The name of the bank associated with the routing number.',
+                                                     ),
+                                                     'country' => new Partial\Schema(
+                                                         type: 'string',
+                                                         description: 'Two-letter country code (ISO 3166-1 alpha-2).',
+                                                     ),
+                                                 ],
+                                                 title: 'Bank Account',
+                                                 description: 'A bank account to take payment from. '
+                                                 . 'Must be able to make payments in the currency specified in the payment.',
+                                             ),
+                                         ],
+                                         description: 'The payment source to take the payment from. '
+                                             . 'This can be a card or a bank account. '
+                                             . 'Some of these properties will be hidden on read to protect PII leaking.',
+                                     ),
+                                     'status' => new Partial\Schema(
+                                         type: 'string',
+                                         enum: [
+                                             new Value('pending'),
+                                             new Value('succeeded'),
+                                             new Value('failed'),
+                                         ],
+                                         description: 'The status of the payment, '
+                                             . 'one of `pending`, `succeeded`, or `failed`.',
+                                     ),
+                                     'currency' => new Partial\Schema(
+                                         type: 'string',
+                                         enum: [
+                                             new Value('bam'),
+                                             new Value('bgn'),
+                                             new Value('chf'),
+                                             new Value('eur'),
+                                             new Value('gbp'),
+                                             new Value('nok'),
+                                             new Value('sek'),
+                                             new Value('try'),
+                                         ],
+                                         description: 'Three-letter [ISO currency code](https://www.iso.org/iso-4217-currency-codes.html), in lowercase.',
+                                     )
+                                 ],
+                            ),
+                        ),
+                    ],
+                    required: true,
+                ),
+            )
         );
     }
 }
