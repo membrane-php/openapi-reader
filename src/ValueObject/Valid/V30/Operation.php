@@ -32,6 +32,7 @@ final class Operation extends Validated
         public readonly string $operationId,
         public readonly array $servers,
         public readonly array $parameters,
+        public readonly RequestBody|null $requestBody,
     ) {
         parent::__construct($identifier);
 
@@ -46,6 +47,7 @@ final class Operation extends Validated
             $this->operationId,
             [new Server($this->getIdentifier(), new Partial\Server('/'))],
             $this->parameters,
+            $this->requestBody,
         );
     }
 
@@ -80,11 +82,16 @@ final class Operation extends Validated
             $operation->parameters
         );
 
+        $requestBody = isset($operation->requestBody) ?
+            new RequestBody($identifier, $operation->requestBody) :
+            null;
+
         return new Operation(
             $identifier,
             $operationId,
             $servers,
             $parameters,
+            $requestBody,
         );
     }
 

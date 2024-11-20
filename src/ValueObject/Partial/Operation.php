@@ -11,9 +11,10 @@ final class Operation
      * @param Parameter[] $parameters
      */
     public function __construct(
-        public ?string $operationId = null,
+        public string|null $operationId = null,
         public array $servers = [],
         public array $parameters = [],
+        public RequestBody|null $requestBody = null,
     ) {
     }
 }
