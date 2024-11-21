@@ -24,10 +24,10 @@ final class Schema extends Validated implements Valid\Schema
     public readonly Value|null $default;
 
     public readonly float|int|null $multipleOf;
-    public readonly float|int|null $maximum;
     public readonly bool $exclusiveMaximum;
-    public readonly float|int|null $minimum;
     public readonly bool $exclusiveMinimum;
+    public readonly float|int|null $maximum;
+    public readonly float|int|null $minimum;
 
     public readonly int|null $maxLength;
     public readonly int $minLength;
@@ -39,12 +39,12 @@ final class Schema extends Validated implements Valid\Schema
     public readonly int $minItems;
     public readonly bool $uniqueItems;
 
+    /** @var array<string, Schema> */
+    public readonly array $properties;
     public readonly int|null $maxProperties;
     public readonly int $minProperties;
     /** @var non-empty-array<string>|null  */
     public readonly array|null $required;
-    /** @var array<string, Schema> */
-    public readonly array $properties;
     public readonly bool|Schema $additionalProperties;
 
     /** @var non-empty-array<Schema>|null */

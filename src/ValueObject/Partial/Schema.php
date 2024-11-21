@@ -24,7 +24,6 @@ final class Schema
         public null|string|array $type = null,
         /** @var array<Value>|null */
         public array|null $enum = null,
-        public Value|null $const = null,
         public Value|null $default = null,
         /**
          * 3.0 keywords that are extensions to the spec
@@ -56,10 +55,7 @@ final class Schema
          */
         public int|null $maxItems = null,
         public int $minItems = 0,
-        public bool $uniqueItems = false,
-        public int|null $maxContains = null,
-        public int|null $minContains = null,
-        /**
+        public bool $uniqueItems = false, /**
          * Keywords for object type
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#autoid-11
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-validation#name-validation-keywords-for-obj
@@ -67,10 +63,7 @@ final class Schema
         public int|null $maxProperties = null,
         public int $minProperties = 0,
         /** @var array<string>|null */
-        public array|null $required = null,
-        /** @var array<string,array<string>>|null */
-        public array|null $dependentRequired = null,
-        /**
+        public array|null $required = null, /**
          * Keywords for applying subschemas with logic
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subsch
@@ -83,42 +76,19 @@ final class Schema
         public array|null $oneOf = null,
         public Schema|null $not = null,
         /**
-         * Keywords for applying subschemas conditionally
-         * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
-         * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subsche
-         */
-        public Schema|null $if = null,
-        public Schema|null $then = null,
-        public Schema|null $else = null,
-        /** @var array<string,Schema>|null */
-        public array|null $dependentSchemas = null,
-        /**
          * Keywords for applying subschemas to arrays
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subschema
          */
-        /** @var array<Schema> */
-        public array $prefixItems = [],
         public Schema|null $items = null,
-        public Schema|null $contains = null,
         /**
-         * Keywords for applying subschemas to arrays
+         * Keywords for applying subschemas to objects
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keywords-for-applying-subschemas
          */
         /** @var array<string, Schema> */
         public array $properties = [],
-        /** @var array<string, Schema> */
-        public array $patternProperties = [],
         public bool|Schema $additionalProperties = true,
-        public bool|Schema $propertyNames = true,
-        /**
-         * Keywords that are exceptions to the usual "keyword independence"
-         * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
-         * 3.1 https://json-schema.org/draft/2020-12/json-schema-core#name-keyword-independence-2
-         */
-        public bool|Schema $unevaluatedItems = true,
-        public bool|Schema $unevaluatedProperties = true,
         /**
          * Keywords that MAY provide additional validation, depending on tool
          * https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7

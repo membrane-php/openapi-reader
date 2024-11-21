@@ -149,7 +149,6 @@ final class FromCebe
             enum: isset($schema->enum) ?
                 array_map(fn($e) => new Value($e), $schema->enum) :
                 null,
-            const: isset($schema->const) ? new Value($schema->const) : null,
             default: isset($schema->default) ? new Value($schema->default) : null,
             nullable: $schema->nullable ?? false,
             multipleOf: $schema->multipleOf ?? null,
@@ -167,22 +166,13 @@ final class FromCebe
             maxItems: $schema->maxItems ?? null,
             minItems: $schema->minItems ?? 0,
             uniqueItems: $schema->uniqueItems ?? false,
-            maxContains: $schema->maxContains ?? null,
-            minContains: $schema->minContains ?? null,
             maxProperties: $schema->maxProperties ?? null,
             minProperties: $schema->minProperties ?? 0,
             required: $schema->required ?? null,
-            dependentRequired: $schema->dependentRequired ?? null,
             allOf: isset($schema->allOf) ? $createSchemas($schema->allOf) : null,
             anyOf: isset($schema->anyOf) ? $createSchemas($schema->anyOf) : null,
             oneOf: isset($schema->oneOf) ? $createSchemas($schema->oneOf) : null,
             not: isset($schema->not) ? self::createSchema($schema->not) : null,
-            if: isset($schema->if) ? self::createSchema($schema->if) : null,
-            then: isset($schema->then) ? self::createSchema($schema->then) : null,
-            else: isset($schema->else) ? self::createSchema($schema->else) : null,
-            dependentSchemas: isset($schema->dependentSchemas) ?
-                $createSchemas($schema->dependentSchemas) :
-                null,
             items: isset($schema->items) ? self::createSchema($schema->items) : null,
             properties: isset($schema->properties) ? $createSchemas($schema->properties) : [],
             additionalProperties: is_bool($schema->additionalProperties) ?

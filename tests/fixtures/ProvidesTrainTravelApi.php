@@ -89,7 +89,7 @@ final class ProvidesTrainTravelApi
                 new Partial\Parameter(
                     name: 'page',
                     in: 'query',
-                    schema: new Partial\Schema(type: 'integer', minimum: 1),
+                    schema: new Partial\Schema(type: 'integer', minimum: 1, default: new Value(1)),
                 ),
                 new Partial\Parameter(
                     name: 'coordinates',
@@ -137,12 +137,12 @@ final class ProvidesTrainTravelApi
                 new Partial\Parameter(
                     name: 'bicycles',
                     in: 'query',
-                    schema: new Partial\Schema(type: 'boolean'),
+                    schema: new Partial\Schema(type: 'boolean', default: new Value(false)),
                 ),
                 new Partial\Parameter(
                     name: 'dogs',
                     in: 'query',
-                    schema: new Partial\Schema(type: 'boolean'),
+                    schema: new Partial\Schema(type: 'boolean', default: new Value(false)),
                 ),
                 new Partial\Parameter(
                     name: 'page',
@@ -364,7 +364,6 @@ final class ProvidesTrainTravelApi
                                                  properties:[
                                                      'object' => new Partial\Schema(
                                                          type: 'string',
-                                                         const: new Value('card'),
                                                      ),
                                                      'name' => new Partial\Schema(
                                                          type: 'string',
@@ -409,7 +408,7 @@ final class ProvidesTrainTravelApi
                                                      'country',
                                                  ],
                                                  properties: [
-                                                     'object' => new Partial\Schema(type: 'string', const: new Value('bank_account')),
+                                                     'object' => new Partial\Schema(type: 'string'),
                                                      'name' => new Partial\Schema(type: 'string'),
                                                      'number' => new Partial\Schema(
                                                          type: 'string',
