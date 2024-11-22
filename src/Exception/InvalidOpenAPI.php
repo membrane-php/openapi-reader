@@ -409,4 +409,16 @@ final class InvalidOpenAPI extends RuntimeException
 
         return new self($message);
     }
+
+    public static function mustHaveStringKeys(
+        Identifier $identifier,
+        string $keyword,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            $keyword MUST be specified an array with string keys
+            TEXT;
+
+        return new self($message);
+    }
 }
