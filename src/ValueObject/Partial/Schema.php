@@ -124,6 +124,12 @@ final class Schema
          * https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7
          */
         public string|null $format = null,
+        /**
+         * Keywords that provide additional metadata
+         * https://json-schema.org/draft/2020-12/json-schema-validation#section-9
+         */
+        public string|null $title = null,
+        public string|null $description = null,
     ) {
     }
 }

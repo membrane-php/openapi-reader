@@ -160,6 +160,8 @@ final class PartialHelper
         array|null $oneOf = null,
         Schema|null $not = null,
         string|null $format = null,
+        string|null $title = null,
+        string|null $description = null,
     ): Schema {
         return new Schema(
             type: $type,
@@ -187,6 +189,8 @@ final class PartialHelper
             items: $items,
             properties: $properties,
             format: $format,
+            title: $title,
+            description: $description,
         );
     }
 }
