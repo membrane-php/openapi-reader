@@ -10,6 +10,7 @@ use Membrane\OpenAPIReader\ValueObject\Partial\OpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Partial\Operation;
 use Membrane\OpenAPIReader\ValueObject\Partial\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
+use Membrane\OpenAPIReader\ValueObject\Partial\RequestBody;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
@@ -212,7 +213,24 @@ final class FromCebe
         return new Operation(
             operationId: $operation->operationId,
             servers: self::createServers($operation->servers),
-            parameters: self::createParameters($operation->parameters)
+            parameters: self::createParameters($operation->parameters),
+            requestBody: self::createRequestBody($operation->requestBody),
+        );
+    }
+
+    private static function createRequestBody(
+        Cebe\Reference|Cebe\RequestBody|null $requestBody
+    ): ?RequestBody {
+        assert(! $requestBody instanceof Cebe\Reference);
+
+        if (is_null($requestBody)) {
+            return null;
+        }
+
+        return new RequestBody(
+            $requestBody->description ?? null,
+            self::createContent($requestBody->content ?? []),
+            $requestBody->required ?? false,
         );
     }
 }

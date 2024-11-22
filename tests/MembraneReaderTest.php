@@ -6,6 +6,7 @@ namespace Membrane\OpenAPIReader\Tests;
 
 use cebe\{openapi\exceptions as CebeException};
 use Generator;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesPetstoreApi;
 use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
@@ -17,7 +18,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 use org\bovigo\vfs\vfsStream;
-use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, Test, TestDox, UsesClass};
+use PHPUnit\Framework\Attributes\{CoversClass, DataProvider, DataProviderExternal, Test, TestDox, UsesClass};
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -346,6 +347,24 @@ class MembraneReaderTest extends TestCase
 
         self::assertEquals($expected, $actual);
     }
+
+    #[Test]
+    #[DataProviderExternal(ProvidesPetstoreApi::class, 'provideOperations')]
+    public function itReadsRealExamples(
+        string $filepath,
+        string $path,
+        Method $method,
+        Valid\V30\Operation $expected
+    ): void {
+        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+
+        $api = $sut->readFromAbsoluteFilePath($filepath);
+
+        $actual = $api->paths[$path]?->getOperations()[$method->value];
+
+        self::assertEquals($expected, $actual);
+    }
+
 
     public static function provideInvalidFormatting(): Generator
     {

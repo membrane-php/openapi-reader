@@ -45,6 +45,12 @@ paths:
       operationId: createPets
       tags:
         - pets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+        required: true
       responses:
         '201':
           description: Null response
@@ -63,12 +69,6 @@ paths:
       parameters:
         - name: petId
           in: path
-          required: true
-          description: The id of the pet to retrieve
-          schema:
-            type: string
-        - name: petId
-          in: query
           required: true
           description: The id of the pet to retrieve
           schema:
