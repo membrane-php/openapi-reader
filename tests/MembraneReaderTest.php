@@ -443,7 +443,9 @@ class MembraneReaderTest extends TestCase
                 $openAPIArray['paths'] = ['/firstpath' => ['get' => $path]];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+            InvalidOpenAPI::mustHaveSchemaXorContent(
+                new Identifier('(1.0.0)', '/firstpath', 'get-first-path(get)', 'param(query)')
+            ),
         ];
 
         yield 'path with parameter both schema and content' => [
@@ -460,7 +462,9 @@ class MembraneReaderTest extends TestCase
                 ],];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+            InvalidOpenAPI::mustHaveSchemaXorContent(
+                new Identifier('(1.0.0)', '/firstpath', 'param(query)')
+            ),
         ];
 
         yield 'path with operation missing both schema and content' => [
@@ -472,7 +476,9 @@ class MembraneReaderTest extends TestCase
                 ]];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+            InvalidOpenAPI::mustHaveSchemaXorContent(
+                new Identifier('(1.0.0)', '/firstpath', 'param(query)')
+            ),
         ];
 
         yield 'path with operation both schema and content' => [
@@ -488,7 +494,9 @@ class MembraneReaderTest extends TestCase
                 $openAPIArray['paths'] = ['/firstpath' => ['get' => $path],];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent('param'),
+            InvalidOpenAPI::mustHaveSchemaXorContent(
+                new Identifier('(1.0.0)', '/firstpath', 'get-first-path(get)', 'param(query)')
+            ),
         ];
     }
 

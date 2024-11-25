@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\Factory\V30;
 
 use cebe\openapi\spec as Cebe;
+use Membrane\OpenAPIReader\ValueObject\Partial\Header;
 use Membrane\OpenAPIReader\ValueObject\Partial\MediaType;
 use Membrane\OpenAPIReader\ValueObject\Partial\OpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Partial\Operation;
 use Membrane\OpenAPIReader\ValueObject\Partial\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
 use Membrane\OpenAPIReader\ValueObject\Partial\RequestBody;
+use Membrane\OpenAPIReader\ValueObject\Partial\Response;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
@@ -210,11 +212,19 @@ final class FromCebe
             return null;
         }
 
+
+        $responses = [];
+        foreach ($operation->responses ?? [] as $code => $response) {
+            $responses[$code] = self::createResponse($response);
+        }
+
+
         return new Operation(
             operationId: $operation->operationId,
             servers: self::createServers($operation->servers),
             parameters: self::createParameters($operation->parameters),
             requestBody: self::createRequestBody($operation->requestBody),
+            responses: $responses,
         );
     }
 
@@ -231,6 +241,31 @@ final class FromCebe
             $requestBody->description ?? null,
             self::createContent($requestBody->content ?? []),
             $requestBody->required ?? false,
+        );
+    }
+
+    public static function createHeader(
+        Cebe\Reference|Cebe\Header $header
+    ): Header {
+        return new Header(
+            description: $header->description ?? null,
+            style: $header->style ?? 'simple',
+            explode: $header->explode ?? false,
+            required: $header->required ?? false,
+            schema: isset($header->schema) ? self::createSchema($header->schema) : null,
+            content: isset($header->content) ? self::createContent($header->content) : [],
+        );
+    }
+
+    private static function createResponse(
+        Cebe\Reference|Cebe\Response $response,
+    ): Response {
+        assert(! $response instanceof Cebe\Reference);
+
+        return new Response(
+            description: $response->description,
+            headers: array_map(fn($h) => self::createHeader($h), $response->headers),
+            content: self::createContent($response->content ?? []),
         );
     }
 }

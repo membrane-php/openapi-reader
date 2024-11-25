@@ -47,14 +47,14 @@ final class Parameter extends Validated
 
     public function __construct(
         Identifier $parentIdentifier,
-        Partial\Parameter $parameter
+        Partial\Parameter $header
     ) {
-        $this->name = $parameter->name ??
+        $this->name = $header->name ??
             throw InvalidOpenAPI::parameterMissingName($parentIdentifier);
 
         $this->in = $this->validateIn(
             $parentIdentifier,
-            $parameter->in,
+            $header->in,
         );
 
         $identifier = $parentIdentifier->append($this->name, $this->in->value);
@@ -63,25 +63,24 @@ final class Parameter extends Validated
         $this->required = $this->validateRequired(
             $identifier,
             $this->in,
-            $parameter->required
+            $header->required
         );
 
-        isset($parameter->schema) === empty($parameter->content) ?:
-            throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
+        isset($header->schema) === empty($header->content) ?:
+            throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
 
-        if (isset($parameter->schema)) {
+        if (isset($header->schema)) {
             $this->content = [];
             $this->schema = new Schema(
                 $this->appendedIdentifier('schema'),
-                $parameter->schema
+                $header->schema
             );
         } else {
             $this->schema = null;
 
             $this->content = $this->validateContent(
                 $this->getIdentifier(),
-                $parameter->name,
-                $parameter->content
+                $header->content
             );
         }
 
@@ -89,10 +88,10 @@ final class Parameter extends Validated
             $identifier,
             $this->getSchema(),
             $this->in,
-            $parameter->style,
+            $header->style,
         );
 
-        $this->explode = $parameter->explode ?? $this->style->defaultExplode();
+        $this->explode = $header->explode ?? $this->style->defaultExplode();
     }
 
     public function getSchema(): Schema
@@ -117,7 +116,8 @@ final class Parameter extends Validated
 
     public function isIdentical(Parameter $other): bool
     {
-        return $this->name === $other->name && $this->in === $other->in;
+        return $this->name === $other->name
+            && $this->in === $other->in;
     }
 
     public function isSimilar(Parameter $other): bool
@@ -226,11 +226,10 @@ final class Parameter extends Validated
      */
     private function validateContent(
         Identifier $identifier,
-        string $name,
         array $content,
     ): array {
         if (count($content) !== 1) {
-            throw InvalidOpenAPI::parameterContentCanOnlyHaveOneEntry($this->getIdentifier());
+            throw InvalidOpenAPI::parameterContentCanOnlyHaveOneEntry($identifier);
         }
 
         if (!isset($content[0]->contentType)) {
@@ -238,7 +237,7 @@ final class Parameter extends Validated
         }
 
         if (!isset($content[0]->schema)) {
-            throw InvalidOpenAPI::mustHaveSchemaXorContent($name);
+            throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
         }
 
         return [
