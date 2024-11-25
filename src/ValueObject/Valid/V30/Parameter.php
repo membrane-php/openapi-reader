@@ -67,7 +67,7 @@ final class Parameter extends Validated
         );
 
         isset($parameter->schema) === empty($parameter->content) ?:
-            throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
+            throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
 
         if (isset($parameter->schema)) {
             $this->content = [];
@@ -80,7 +80,6 @@ final class Parameter extends Validated
 
             $this->content = $this->validateContent(
                 $this->getIdentifier(),
-                $parameter->name,
                 $parameter->content
             );
         }
@@ -117,7 +116,8 @@ final class Parameter extends Validated
 
     public function isIdentical(Parameter $other): bool
     {
-        return $this->name === $other->name && $this->in === $other->in;
+        return $this->name === $other->name
+            && $this->in === $other->in;
     }
 
     public function isSimilar(Parameter $other): bool
@@ -226,11 +226,10 @@ final class Parameter extends Validated
      */
     private function validateContent(
         Identifier $identifier,
-        string $name,
         array $content,
     ): array {
         if (count($content) !== 1) {
-            throw InvalidOpenAPI::parameterContentCanOnlyHaveOneEntry($this->getIdentifier());
+            throw InvalidOpenAPI::parameterContentCanOnlyHaveOneEntry($identifier);
         }
 
         if (!isset($content[0]->contentType)) {
@@ -238,7 +237,7 @@ final class Parameter extends Validated
         }
 
         if (!isset($content[0]->schema)) {
-            throw InvalidOpenAPI::mustHaveSchemaXorContent($name);
+            throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
         }
 
         return [

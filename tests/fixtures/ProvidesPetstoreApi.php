@@ -41,13 +41,57 @@ final class ProvidesPetstoreApi
             )],
             pathParameters: [],
             method: Method::GET,
-            operation: new Partial\Operation('listPets', [], [
-                new Partial\Parameter(
+            operation: new Partial\Operation(
+                operationId: 'listPets',
+                servers: [],
+                parameters: [new Partial\Parameter(
                     name: 'limit',
                     in: 'query',
                     schema: new Partial\Schema(type: 'integer', maximum: 100, format: 'int32'),
-                ),
-            ])
+                )],
+                responses: [
+                    '200' => new Partial\Response(
+                        description: 'A paged array of pets',
+                        content: [new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'array',
+                                items: new Partial\Schema(
+                                    type: 'object',
+                                    required: ['id', 'name'],
+                                    properties: [
+                                        'id' => new Partial\Schema(
+                                            type: 'integer',
+                                            format: 'int64',
+                                        ),
+                                        'name' => new Partial\Schema(
+                                            type: 'string',
+                                        ),
+                                        'tag' => new Partial\Schema(
+                                            type: 'string',
+                                        ),
+                                    ],
+                                ),
+                                maxItems: 100,
+                            )
+                        )]
+                    ),
+                    'default' => new Partial\Response(
+                        description: 'unexpected error',
+                        content: [new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                required: ['code', 'message'],
+                                properties: [
+                                    'code' => new Partial\Schema(type: 'integer', format: 'int32'),
+                                    'message' => new Partial\Schema(type: 'string'),
+                                ]
+                            )
+                        )]
+                    ),
+                ]
+            ),
         );
     }
 
@@ -61,21 +105,46 @@ final class ProvidesPetstoreApi
             )],
             pathParameters: [],
             method: Method::POST,
-            operation: new Partial\Operation('createPets', [], [], new Partial\RequestBody(
-                content: [new Partial\MediaType(
-                    contentType: 'application/json',
-                    schema: new Partial\Schema(
-                        type: 'object',
-                        required: ['id', 'name'],
-                        properties: [
-                            'id' => new Partial\Schema(type: 'integer', format: 'int64'),
-                            'name' => new Partial\Schema(type: 'string'),
-                            'tag' => new Partial\Schema(type: 'string'),
-                        ],
-                    )
-                )],
-                required: true,
-            )),
+            operation: new Partial\Operation(
+                'createPets',
+                [],
+                [],
+                new Partial\RequestBody(
+                    content: [new Partial\MediaType(
+                        contentType: 'application/json',
+                        schema: new Partial\Schema(
+                            type: 'object',
+                            required: ['id', 'name'],
+                            properties: [
+                                'id' => new Partial\Schema(type: 'integer', format: 'int64'),
+                                'name' => new Partial\Schema(type: 'string'),
+                                'tag' => new Partial\Schema(type: 'string'),
+                            ],
+                        )
+                    )],
+                    required: true,
+                ),
+                responses: [
+                    '201' => new Partial\Response(
+                        description: 'Null response',
+                        content: []
+                    ),
+                    'default' => new Partial\Response(
+                        description: 'unexpected error',
+                        content: [new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                required: ['code', 'message'],
+                                properties: [
+                                    'code' => new Partial\Schema(type: 'integer', format: 'int32'),
+                                    'message' => new Partial\Schema(type: 'string'),
+                                ]
+                            )
+                        )]
+                    ),
+                ]),
+
         );
     }
 
@@ -89,14 +158,54 @@ final class ProvidesPetstoreApi
             )],
             pathParameters: [],
             method: Method::GET,
-            operation: new Partial\Operation('showPetById', [], [
-                new Partial\Parameter(
+            operation: new Partial\Operation(
+                operationId: 'showPetById',
+                servers: [],
+                parameters: [new Partial\Parameter(
                     name: 'petId',
                     in: 'path',
                     required: true,
                     schema: new Partial\Schema(type: 'string'),
-                ),
-            ])
+                )],
+                responses: [
+                    '200' => new Partial\Response(
+                        description: 'Expected response to a valid request',
+                        content: [new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                required: ['id', 'name'],
+                                properties: [
+                                    'id' => new Partial\Schema(
+                                        type: 'integer',
+                                        format: 'int64',
+                                    ),
+                                    'name' => new Partial\Schema(
+                                        type: 'string',
+                                    ),
+                                    'tag' => new Partial\Schema(
+                                        type: 'string',
+                                    ),
+                                ],
+                            ),
+                        )]
+                    ),
+                    'default' => new Partial\Response(
+                        description: 'unexpected error',
+                        content: [new Partial\MediaType(
+                            contentType: 'application/json',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                required: ['code', 'message'],
+                                properties: [
+                                    'code' => new Partial\Schema(type: 'integer', format: 'int32'),
+                                    'message' => new Partial\Schema(type: 'string'),
+                                ]
+                            )
+                        )]
+                    ),
+                ]
+            )
         );
     }
 }

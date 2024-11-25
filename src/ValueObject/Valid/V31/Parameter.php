@@ -67,7 +67,7 @@ final class Parameter extends Validated
         );
 
         isset($parameter->schema) === empty($parameter->content) ?:
-            throw InvalidOpenAPI::mustHaveSchemaXorContent($parameter->name);
+            throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
 
         if (isset($parameter->schema)) {
             $this->content = [];

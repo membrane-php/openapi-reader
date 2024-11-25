@@ -11,7 +11,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
-
+//TODO valid operation needs to validateResponses
 final class Operation extends Validated
 {
     /**
@@ -26,6 +26,8 @@ final class Operation extends Validated
      * @param string $operationId
      * Required by Membrane
      * MUST be unique, value is case-sensitive.
+     *
+     * @param Response[] $responses
      */
     private function __construct(
         Identifier $identifier,
@@ -33,6 +35,7 @@ final class Operation extends Validated
         public readonly array $servers,
         public readonly array $parameters,
         public readonly RequestBody|null $requestBody,
+        public readonly array $responses,
     ) {
         parent::__construct($identifier);
 
@@ -48,6 +51,7 @@ final class Operation extends Validated
             [new Server($this->getIdentifier(), new Partial\Server('/'))],
             $this->parameters,
             $this->requestBody,
+            $this->responses,
         );
     }
 
@@ -86,12 +90,15 @@ final class Operation extends Validated
             new RequestBody($identifier, $operation->requestBody) :
             null;
 
+        $responses = self::validateResponses($identifier, $operation->responses);
+
         return new Operation(
             $identifier,
             $operationId,
             $servers,
             $parameters,
             $requestBody,
+            $responses,
         );
     }
 
@@ -213,5 +220,33 @@ final class Operation extends Validated
         }
 
         return array_values($result);
+    }
+
+    /**
+     * @param Partial\Response[] $responses
+     * @return array<string, Response>
+     */
+    private static function validateResponses(
+        Identifier $identifier,
+        array $responses,
+    ): array
+    {
+        $result = [];
+
+        foreach ($responses as $code => $response) {
+            if (! is_numeric($code) && $code !== 'default') {
+                throw InvalidOpenAPI::responseCodeMustBeNumericOrDefault(
+                    $identifier,
+                    (string) $code,
+                );
+            }
+
+            $result[(string) $code] = new Response(
+                $identifier->append('response', (string) $code),
+                $response,
+            );
+        }
+
+        return $result;
     }
 }

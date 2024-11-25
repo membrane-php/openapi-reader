@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\Tests\Fixtures\Helper;
 
 use cebe\openapi\spec as Cebe;
+use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
 
 final class OpenAPIProvider
@@ -239,7 +240,10 @@ final class OpenAPIProvider
                                     )
                                 ]
                             )
-                        ]
+                        ],
+                        responses: [
+                            '200' => new Partial\Response(description: 'Successful Response'),
+                        ],
                     )
                 ),
                 PartialHelper::createPathItem(
@@ -283,7 +287,10 @@ final class OpenAPIProvider
                                     )
                                 ]
                             )
-                        ]
+                        ],
+                        responses: [
+                            '200' => new Partial\Response(description: 'Successful Response'),
+                        ],
                     ),
                     put: PartialHelper::createOperation(
                         operationId: 'second-put',
@@ -299,7 +306,10 @@ final class OpenAPIProvider
                                     type: 'object'
                                 )
                             )
-                        ]
+                        ],
+                        responses: [
+                            '200' => new Partial\Response(description: 'Successful Response'),
+                        ],
                     )
                 )
             ]

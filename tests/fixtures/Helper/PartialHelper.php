@@ -9,6 +9,8 @@ use Membrane\OpenAPIReader\ValueObject\Partial\OpenAPI;
 use Membrane\OpenAPIReader\ValueObject\Partial\Operation;
 use Membrane\OpenAPIReader\ValueObject\Partial\Parameter;
 use Membrane\OpenAPIReader\ValueObject\Partial\PathItem;
+use Membrane\OpenAPIReader\ValueObject\Partial\RequestBody;
+use Membrane\OpenAPIReader\ValueObject\Partial\Response;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
@@ -103,15 +105,24 @@ final class PartialHelper
         );
     }
 
+    /**
+     * @param Server[] $servers
+     * @param Parameter[] $parameters
+     * @param Response[] $responses
+     */
     public static function createOperation(
         ?string $operationId = 'test-id',
         array $servers = [],
-        array $parameters = []
+        array $parameters = [],
+        RequestBody $requestBody = null,
+        array $responses = [],
     ): Operation {
         return new Operation(
-            $operationId,
-            $servers,
-            $parameters
+            operationId: $operationId,
+            servers: $servers,
+            parameters: $parameters,
+            requestBody: $requestBody,
+            responses: $responses,
         );
     }
 
