@@ -12,6 +12,16 @@ use RuntimeException;
  */
 final class InvalidOpenAPI extends RuntimeException
 {
+    public static function missingRequiredField(
+        Identifier $identifier,
+        string $requiredField,
+    ): self {
+        return new InvalidOpenAPI(<<<TEXT
+            $identifier
+              - Missing required field "$requiredField"
+            TEXT);
+    }
+
     public static function missingInfo(): self
     {
         $message = <<<TEXT
@@ -256,11 +266,12 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function mustHaveSchemaXorContent(string $name): self
+    public static function mustHaveSchemaXorContent(Identifier $identifier): self
     {
-        return new self(
-            sprintf('Parameter "%s" MUST have either a Schema or Content, but not both.', $name),
-        );
+        return new self(<<<TEXT
+            $identifier
+            Parameter MUST have either a Schema or Content, but not both.
+            TEXT);
     }
 
     public static function parameterContentCanOnlyHaveOneEntry(Identifier $identifier): self
@@ -417,6 +428,19 @@ final class InvalidOpenAPI extends RuntimeException
         $message = <<<TEXT
             $identifier
             $keyword MUST be specified an array with string keys
+            TEXT;
+
+        return new self($message);
+    }
+
+    public static function responseCodeMustBeNumericOrDefault(
+        Identifier $identifier,
+        string $code,
+    ): self {
+        $message = <<<TEXT
+            $identifier
+            Response code MUST be numeric, or "default". 
+            "$code" is invalid.
             TEXT;
 
         return new self($message);

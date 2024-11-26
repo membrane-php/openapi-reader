@@ -307,7 +307,7 @@ class ParameterTest extends TestCase
 
         foreach ($schemaXorContentCases as $schemaXorContentCase => $data) {
             yield $schemaXorContentCase => $case(
-                InvalidOpenAPI::mustHaveSchemaXorContent($name),
+                InvalidOpenAPI::mustHaveSchemaXorContent($identifier),
                 $data,
             );
         }
