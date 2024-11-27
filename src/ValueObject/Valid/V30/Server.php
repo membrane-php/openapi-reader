@@ -5,24 +5,23 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
+use Membrane\OpenAPIReader\Service\Url;
 use Membrane\OpenAPIReader\ValueObject\Partial;
+use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 
-final class Server extends Validated
+final class Server extends Validated implements Valid\Server
 {
-    /**
-     * REQUIRED
-     */
+    /** REQUIRED */
     public readonly string $url;
 
     /**
      * When the url has a variable named in {brackets}
      * This array MUST contain the definition of the corresponding variable.
-     *
-     * The name of the variable is mapped to the Server Variable Object
      * @var array<string,ServerVariable>
+     *     A map between variable name and its value
      */
     public readonly array $variables;
 
@@ -34,9 +33,10 @@ final class Server extends Validated
             throw InvalidOpenAPI::serverMissingUrl($parentIdentifier);
         }
 
-        parent::__construct($parentIdentifier->append($server->url));
+        $identifier = $parentIdentifier->append($server->url);
+        parent::__construct($identifier);
 
-        $this->url = $this->validateUrl($parentIdentifier, $server->url);
+        $this->url = $this->validateUrl($identifier, $server->url);
 
         $this->variables = $this->validateVariables(
             $this->getIdentifier(),
@@ -45,20 +45,6 @@ final class Server extends Validated
         );
     }
 
-    /**
-     * Returns the list of variable names in order of appearance within the URL.
-     * @return array<int, string>
-     */
-    public function getVariableNames(): array
-    {
-        preg_match_all('#{[^/]+}#', $this->url, $result);
-
-        return array_map(fn($v) => trim($v, '{}'), $result[0]);
-    }
-
-    /**
-     * Returns the regex of the URL
-     */
     public function getPattern(): string
     {
         $regex = preg_replace('#{[^/]+}#', '([^/]+)', $this->url);
@@ -66,32 +52,26 @@ final class Server extends Validated
         return $regex;
     }
 
+    public function getVariableNames(): array
+    {
+        preg_match_all('#{[^/]+}#', $this->url, $result);
+
+        return array_map(fn($v) => trim($v, '{}'), $result[0]);
+    }
+
+    public function isConcrete(): bool
+    {
+        return empty($this->variables);
+    }
+
+    public function isTemplated(): bool
+    {
+        return !empty($this->getVariableNames());
+    }
+
     private function validateUrl(Identifier $identifier, string $url): string
     {
-        $characters = str_split($url);
-
-        $insideVariable = false;
-        foreach ($characters as $character) {
-            if ($character === '{') {
-                if ($insideVariable) {
-                    throw InvalidOpenAPI::urlNestedVariable(
-                        $identifier->append($url)
-                    );
-                }
-                $insideVariable = true;
-            } elseif ($character === '}') {
-                if (!$insideVariable) {
-                    throw InvalidOpenAPI::urlLiteralClosingBrace(
-                        $identifier->append($url)
-                    );
-                }
-                $insideVariable = false;
-            }
-        }
-
-        if ($insideVariable) {
-            throw InvalidOpenAPI::urlUnclosedVariable($identifier->append($url));
-        }
+        (new Url\ValidatesTemplate())($identifier, $url);
 
         if (str_ends_with($url, '/') && $url !== '/') {
             $this->addWarning(
@@ -104,7 +84,7 @@ final class Server extends Validated
     }
 
     /**
-     * @param array<int,string> $UrlVariableNames
+     * @param string[] $UrlVariableNames
      * @param Partial\ServerVariable[] $variables
      * @return array<string,ServerVariable>
      */

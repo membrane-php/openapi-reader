@@ -18,10 +18,10 @@ final class ServerVariable extends Validated
     /**
      * If not null:
      * - It SHOULD NOT be empty
-     * - The "default" value SHOULD be contained within this list
-     * @var string[]
+     * - It SHOULD contain the "default" value
+     * @var non-empty-list<string>|null
      */
-    public readonly ?array $enum;
+    public readonly array|null $enum;
 
     public function __construct(
         Identifier $identifier,
