@@ -17,51 +17,55 @@ use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class Schema extends Validated implements Valid\Schema
 {
-    public readonly Type|null $type;
-    public readonly bool $nullable;
-    /** @var array<Value>|null */
+    /** @var list<Type> */
+    public readonly array $types;
+
+    /** @var list<Value>|null */
     public readonly array|null $enum;
     public readonly Value|null $default;
 
     public readonly float|int|null $multipleOf;
-    public readonly float|int|null $maximum;
-    public readonly bool $exclusiveMaximum;
-    public readonly float|int|null $minimum;
-    public readonly bool $exclusiveMinimum;
+    public readonly Limit|null $maximum;
+    public readonly Limit|null $minimum;
 
     public readonly int|null $maxLength;
     public readonly int $minLength;
     public readonly string|null $pattern;
 
-    /** @var Schema|null  */
-    public readonly Schema|null $items;
+    public readonly Schema $items;
     public readonly int|null $maxItems;
     public readonly int $minItems;
     public readonly bool $uniqueItems;
 
     public readonly int|null $maxProperties;
     public readonly int $minProperties;
-    /** @var non-empty-array<string>|null  */
-    public readonly array|null $required;
+    /** @var list<string>  */
+    public readonly array $required;
     /** @var array<string, Schema> */
     public readonly array $properties;
     public readonly bool|Schema $additionalProperties;
 
-    /** @var non-empty-array<Schema>|null */
-    public readonly array|null $allOf;
-    /** @var non-empty-array<Schema>|null */
-    public readonly ?array $anyOf;
-    /** @var non-empty-array<Schema>|null */
-    public readonly array|null $oneOf;
-    public readonly Schema|null $not;
+    /** @var list<Schema> */
+    public readonly array $allOf;
+    /** @var list<Schema> */
+    public readonly array $anyOf;
+    /** @var list<Schema> */
+    public readonly array $oneOf;
+    public readonly bool|Schema $not;
 
-    public readonly string|null $format;
+    public readonly string $format;
 
-    public readonly string|null $title;
-    public readonly string|null $description;
+    public readonly string $title;
+    public readonly string $description;
 
     /** @var Type[] */
     private readonly array $typesItCanBe;
+
+    //TODO how do we determine booleanSchemas
+    // public readonly bool $isEmpty;
+
+    //TODO can we limit additionalProperties and not to Schema?
+    // We need to do so without creating an infinite loop of Schemas
 
     public function __construct(
         Identifier $identifier,
@@ -69,46 +73,54 @@ final class Schema extends Validated implements Valid\Schema
     ) {
         parent::__construct($identifier);
 
-        $this->type = $this->validateType($this->getIdentifier(), $schema->type);
-        $this->nullable = $schema->nullable;
+        $this->types = $this->validateTypes(
+            $identifier,
+            $schema->type,
+            $schema->nullable
+        );
+
+        //TODO reviewEnum is not empty, but allow it to stay empty
         $this->enum = $schema->enum;
         $this->default = $schema->default;
 
         $this->multipleOf = $this->validatePositiveNumber('multipleOf', $schema->multipleOf);
-        $this->maximum = $schema->maximum;
-        $this->exclusiveMaximum = $this->validateExclusiveMinMax('exclusiveMaximum', $schema->exclusiveMaximum);
-        $this->minimum = $schema->minimum;
-        $this->exclusiveMinimum = $this->validateExclusiveMinMax('exclusiveMinimum', $schema->exclusiveMinimum);
+        $this->maximum = isset($schema->maximum) ?
+            new Limit($schema->maximum, $this->validateExclusiveMinMax('exclusiveMaximum', $schema->exclusiveMaximum)) :
+            null;
+        $this->minimum = isset($schema->minimum) ?
+            new Limit($schema->minimum, $this->validateExclusiveMinMax('exclusiveMinimum', $schema->exclusiveMinimum)) :
+            null;
 
-        $this->maxLength = $this->validateNonNegativeInteger('maxLength', $schema->maxLength);
-        $this->minLength = $this->validateNonNegativeInteger('minLength', $schema->minLength) ?? 0;
+        $this->maxLength = $this->validateNonNegativeInteger('maxLength', $schema->maxLength, false);
+        $this->minLength = $this->validateNonNegativeInteger('minLength', $schema->minLength, true);
         $this->pattern = $schema->pattern;
 
-        $this->items = $this->validateItems($this->type, $schema->items);
-        $this->maxItems = $this->validateNonNegativeInteger('maxItems', $schema->maxItems);
-        $this->minItems = $this->validateNonNegativeInteger('minItems', $schema->minItems) ?? 0;
+        $this->items = $this->validateItems($this->types, $schema->items);
+        $this->maxItems = $this->validateNonNegativeInteger('maxItems', $schema->maxItems, false);
+        $this->minItems = $this->validateNonNegativeInteger('minItems', $schema->minItems, true);
         $this->uniqueItems = $schema->uniqueItems;
 
-        $this->maxProperties = $this->validateNonNegativeInteger('maxProperties', $schema->maxProperties);
-        $this->minProperties = $this->validateNonNegativeInteger('minProperties', $schema->minProperties) ?? 0;
+        $this->maxProperties = $this->validateNonNegativeInteger('maxProperties', $schema->maxProperties, false);
+        $this->minProperties = $this->validateNonNegativeInteger('minProperties', $schema->minProperties, true);
         $this->required = $this->validateRequired($schema->required);
         $this->properties = $this->validateProperties($schema->properties);
-        $this->additionalProperties = isset($schema->additionalProperties) ? (is_bool($schema->additionalProperties) ?
-            $schema->additionalProperties :
-            new Schema($this->getIdentifier()->append('additionalProperties'), $schema->additionalProperties)) :
-            true;
+        //todo make it a boolean schema when required
+        $this->additionalProperties = $schema->additionalProperties instanceof Partial\Schema ?
+            new Schema($this->appendedIdentifier('additionalProperties'), $schema->additionalProperties) :
+            $schema->additionalProperties;
 
+        // make empty arrays instead of null
         $this->allOf = $this->validateSubSchemas('allOf', $schema->allOf);
         $this->anyOf = $this->validateSubSchemas('anyOf', $schema->anyOf);
         $this->oneOf = $this->validateSubSchemas('oneOf', $schema->oneOf);
-        $this->not = isset($schema->not) ?
+        $this->not = $schema->not instanceof Partial\Schema ?
             new Schema($this->getIdentifier()->append('not'), $schema->not) :
-            null;
+            $schema->not;
 
-        $this->format = $schema->format;
+        $this->format = $this->formatMetadataString($schema->format);
 
-        $this->title = $schema->title;
-        $this->description = $schema->description;
+        $this->title = $this->formatMetadataString($schema->title);
+        $this->description = $this->formatMetadataString($schema->description);
 
         $this->typesItCanBe = array_map(
             fn($t) => Type::from($t),
@@ -144,41 +156,13 @@ final class Schema extends Validated implements Valid\Schema
         return false;
     }
 
-    /** @return Type[] */
-    public function getTypes(): array
-    {
-        $result = isset($this->type) ?
-            [$this->type] :
-            Type::casesForVersion(OpenAPIVersion::Version_3_0);
-
-        if ($this->nullable) {
-            $result[] = Type::Null;
-        }
-
-        return $result;
-    }
-
-    public function getRelevantMaximum(): ?Limit
-    {
-        return isset($this->maximum) ?
-            new Limit($this->maximum, $this->exclusiveMaximum) :
-            null;
-    }
-
-    public function getRelevantMinimum(): ?Limit
-    {
-        return isset($this->minimum) ?
-            new Limit($this->minimum, $this->exclusiveMinimum) :
-            null;
-    }
-
     /** @return string[] */
     private function typesItCanBe(): array
     {
         $possibilities = [Type::valuesForVersion(OpenAPIVersion::Version_3_0)];
 
-        if ($this->type !== null) {
-            $possibilities[] = [$this->type->value];
+        if ($this->types !== []) {
+            $possibilities[] = $this->types;
         }
 
         if (!empty($this->allOf)) {
@@ -205,21 +189,40 @@ final class Schema extends Validated implements Valid\Schema
         return array_values(array_intersect(...$possibilities));
     }
 
-    /** @param null|string|array<string> $type */
-    private function validateType(Identifier $identifier, null|string|array $type): ?Type
-    {
-        if (is_null($type)) {
-            return null;
+    /**
+     * @param null|string|array<string> $type
+     * @return list<Type>
+     */
+    private function validateTypes(
+        Identifier $identifier,
+        null|string|array $type,
+        bool $nullable,
+    ): array {
+        if (empty($type)) { // If type is unspecified, nullable has no effect
+            return []; // So we can return immediately
         }
 
-        if (is_array($type)) {
-            throw InvalidOpenAPI::typeArrayInWrongVersion($identifier);
+        if (is_string($type)) {
+            $type = [$type];
+        } elseif (count($type) > 1) {
+            throw InvalidOpenAPI::keywordMustBeType(
+                $identifier,
+                'type',
+                Type::String,
+            );
         }
 
-        return Type::tryFromVersion(
-            OpenAPIVersion::Version_3_0,
-            $type
-        ) ?? throw InvalidOpenAPI::invalidType($identifier, $type);
+        $result = array_map(
+            fn($t) => Type::tryFromVersion(OpenAPIVersion::Version_3_0, $t)
+                ?? throw InvalidOpenAPI::invalidType($identifier, $t),
+            $type,
+        );
+
+        if ($nullable) {
+            $result[] = Type::Null;
+        }
+
+        return $result;
     }
 
     private function validateExclusiveMinMax(
@@ -244,50 +247,64 @@ final class Schema extends Validated implements Valid\Schema
         return $value;
     }
 
+    /** @return ($defaultsToZero is true ? int : int|null) */
     private function validateNonNegativeInteger(
         string $keyword,
-        int|null $value
+        int|null $value,
+        bool $defaultsToZero,
     ): int|null {
         if ($value !== null && $value < 0) {
-            throw InvalidOpenAPI::keywordMustBeNegativeInteger($this->getIdentifier(), $keyword);
+            if (! $defaultsToZero) {
+                throw InvalidOpenAPI::keywordMustBeNonNegativeInteger(
+                    $this->getIdentifier(),
+                    $keyword
+                );
+            } else {
+                $this->addWarning("$keyword must not be negative", Warning::INVALID_API);
+                return 0;
+            }
         }
 
         return $value;
     }
 
     /**
-     * @param array<string>|null $value
-     * @return non-empty-array<string>|null
+     * @param array<string>|null $required
+     * @return list<string>
      */
-    private function validateRequired(array|null $value): array|null
+    private function validateRequired(array | null $required): array
     {
-        if ($value === null) {
-            return $value;
+        if ($required === null) {
+            return [];
         }
 
-        if ($value === []) {
-            throw InvalidOpenAPI::mustBeNonEmpty($this->getIdentifier(), 'required');
+        if ($required === []) {
+            $this->addWarning('required must not be empty', Warning::INVALID_API);
+            return [];
         }
 
-        if (count($value) !== count(array_unique($value))) {
-            throw InvalidOpenAPI::mustContainUniqueItems($this->getIdentifier(), 'required');
+        $uniqueRequired = array_unique($required);
+
+        if (count($required) !== count($uniqueRequired)) {
+            $this->addWarning('required must not contain duplicates', Warning::INVALID_API);
         }
 
-        return $value;
+        return $uniqueRequired;
     }
 
     /**
      * @param null|array<Partial\Schema> $subSchemas
-     * @return null|non-empty-array<Schema>
+     * @return list<Schema>
      */
-    private function validateSubSchemas(string $keyword, ?array $subSchemas): ?array
+    private function validateSubSchemas(string $keyword, ?array $subSchemas): array
     {
         if ($subSchemas === null) {
-            return null;
+            return [];
         }
 
         if ($subSchemas === []) {
-            throw InvalidOpenAPI::mustBeNonEmpty($this->getIdentifier(), $keyword);
+            $this->addWarning("$keyword must not be empty", Warning::INVALID_API);
+            return [];
         }
 
         $result = [];
@@ -327,17 +344,24 @@ final class Schema extends Validated implements Valid\Schema
         return $result;
     }
 
-    private function validateItems(Type|null $type, Partial\Schema|null $items): Schema|null
+    /** @param list<Type> $types */
+    private function validateItems(array $types, Partial\Schema|null $items): Schema
     {
-        if (is_null($items)) {
-            //@todo update tests to support this validation
-            //if ($type == Type::Array) {
-            //    throw InvalidOpenAPI::mustSpecifyItemsForArrayType($this->getIdentifier());
-            //}
-
-            return $items;
+        if (in_array(Type::Array, $types) && !isset($items)) {
+            $this->addWarning(
+                'items must be specified, if type is specified as array',
+                Warning::INVALID_API,
+            );
         }
 
-        return new Schema($this->getIdentifier()->append('items'), $items);
+        return new Schema(
+            $this->getIdentifier()->append('items'),
+            $items ?? new Partial\Schema(),
+        );
+    }
+
+    public function formatMetadataString(string $metadata): string
+    {
+        return trim($metadata);
     }
 }

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\ValueObject\Valid;
 
+/**
+ * A Validated object **may** make _opinionated optimizations_ to improve DX.
+ * - It **may** change _appearance_ from its OpenAPI counterpart.
+ * - It **must** express the same _intent_ as its OpenAPI counterpart.
+ */
 abstract class Validated implements HasIdentifier, HasWarnings
 {
     private Warnings $warnings;
