@@ -8,6 +8,7 @@ use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesReviewedSchemas;
 use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
@@ -18,6 +19,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -34,8 +36,31 @@ use PHPUnit\Framework\TestCase;
 class SchemaTest extends TestCase
 {
     #[Test]
+    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
+    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
+    public function itReviewsSchema(Partial\Schema $schema, Warning $warning): void
+    {
+        $sut = new Schema(new Identifier('test'), $schema);
+
+        self::assertContainsEquals($warning, $sut->getWarnings()->all());
+    }
+
+    #[Test]
+    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
+    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
+    public function itAmendsSchema(Partial\Schema $schema, Warning $warning, Partial\Schema $amendment): void
+    {
+        $schema = new Schema(new Identifier('test'), $schema);
+        $amendment = new Schema(new Identifier('test'), $amendment);
+
+        self::assertNotContainsEquals($warning, $amendment->getWarnings()->all());
+        //@TODO assert equality of all properties EXCEPT FOR the warning
+        //self::assertEquals($amended, $original);
+    }
+
+    #[Test]
     #[DataProvider('provideInvalidSchemas')]
-    public function itThrowsOnInvalidSchemas(
+    public function itValidatesSchema(
         InvalidOpenAPI $expected,
         Identifier $identifier,
         Partial\Schema $partialSchema,
@@ -142,10 +167,6 @@ class SchemaTest extends TestCase
 
     public static function provideInvalidSchemas(): Generator
     {
-        foreach (self::provideInvalidComplexSchemas() as $case => $dataset) {
-            yield $case => $dataset;
-        }
-
         yield 'invalid type' => [
             InvalidOpenAPI::invalidType(new Identifier('invalid type'), 'invalid'),
             new Identifier('invalid type'),
@@ -160,40 +181,6 @@ class SchemaTest extends TestCase
             new Identifier('properties list'),
             new Partial\Schema(properties: [new Partial\Schema()]),
         ];
-    }
-
-    private static function provideInvalidComplexSchemas(): Generator
-    {
-        $xOfs = [
-            'allOf' => fn(Partial\Schema ...$subSchemas) => PartialHelper::createSchema(
-                allOf: $subSchemas
-            ),
-            'anyOf' => fn(Partial\Schema ...$subSchemas) => PartialHelper::createSchema(
-                anyOf: $subSchemas
-            ),
-            'oneOf' => fn(Partial\Schema ...$subSchemas) => PartialHelper::createSchema(
-                oneOf: $subSchemas
-            ),
-        ];
-
-        $identifier = new Identifier('test-schema');
-        $case = fn(Identifier $exceptionId, Partial\Schema $schema, string $keyword) => [
-            InvalidOpenAPI::mustBeNonEmpty($exceptionId, $keyword),
-            $identifier,
-            $schema
-        ];
-
-        foreach ($xOfs as $keyword => $xOf) {
-            yield "empty $keyword" => $case($identifier, $xOf(), $keyword);
-
-            foreach ($xOfs as $otherKeyWord => $otherXOf) {
-                yield "$keyword with empty $otherKeyWord inside" => $case(
-                    $identifier->append($keyword, '0'),
-                    $xOf($otherXOf()),
-                    $otherKeyWord,
-                );
-            }
-        }
     }
 
     /**
