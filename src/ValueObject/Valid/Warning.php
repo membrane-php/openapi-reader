@@ -13,6 +13,12 @@ final class Warning
     }
 
     /**
+     * Warning code given for:
+     *     An API that is technically invalid but safely corrected.
+     */
+    public const INVALID_API = 'invalid-api';
+
+    /**
      * Server Variable: "enum" SHOULD NOT be empty
      * Schema: "enum" SHOULD have at least one element
      */

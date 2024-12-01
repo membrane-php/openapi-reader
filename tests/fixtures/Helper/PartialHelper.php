@@ -169,10 +169,10 @@ final class PartialHelper
         array|null $allOf = null,
         array|null $anyOf = null,
         array|null $oneOf = null,
-        Schema|null $not = null,
-        string|null $format = null,
-        string|null $title = null,
-        string|null $description = null,
+        bool|Schema $not = false,
+        string $format = '',
+        string $title = '',
+        string $description = '',
     ): Schema {
         return new Schema(
             type: $type,
