@@ -37,6 +37,7 @@ abstract class Validated implements HasIdentifier, HasWarnings
         return $this->warnings->hasWarnings();
     }
 
+    /** @return Warnings contains the list of issues found during validation */
     public function getWarnings(): Warnings
     {
         return $this->warnings;

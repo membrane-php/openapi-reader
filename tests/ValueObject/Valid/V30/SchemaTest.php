@@ -38,24 +38,25 @@ class SchemaTest extends TestCase
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
-    public function itReviewsSchema(Partial\Schema $schema, Warning $warning): void
+    public function itReviewsSchema(Partial\Schema $schema, Warnings $warnings): void
     {
         $sut = new Schema(new Identifier('test'), $schema);
 
-        self::assertContainsEquals($warning, $sut->getWarnings()->all());
+        self::assertContainsEquals($warnings, $sut->getWarnings()->all());
     }
 
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
-    public function itAmendsSchema(Partial\Schema $schema, Warning $warning, Partial\Schema $amendment): void
-    {
-        $schema = new Schema(new Identifier('test'), $schema);
-        $amendment = new Schema(new Identifier('test'), $amendment);
+    public function itAmendsSchema(
+        Partial\Schema $schema,
+        $_,
+        string $propertyName,
+        mixed $expected,
+    ): void {
+        $sut = new Schema(new Identifier('test'), $schema);
 
-        self::assertNotContainsEquals($warning, $amendment->getWarnings()->all());
-        //@TODO assert equality of all properties EXCEPT FOR the warning
-        //self::assertEquals($amended, $original);
+        self::assertEquals($expected, $sut->{$propertyName});
     }
 
     #[Test]

@@ -81,7 +81,7 @@ final class Schema
         public array|null $anyOf = null,
         /** @var array<Schema>|null */
         public array|null $oneOf = null,
-        public bool|Schema $not = false,
+        public Schema|null $not = null,
         /**
          * Keywords for applying subschemas conditionally
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22
@@ -123,13 +123,13 @@ final class Schema
          * Keywords that MAY provide additional validation, depending on tool
          * https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-7
          */
-        public string $format = '',
+        public string|null $format = null,
         /**
          * Keywords that provide additional metadata
          * https://json-schema.org/draft/2020-12/json-schema-validation#section-9
          */
-        public string $title = '',
-        public string $description = '',
+        public string|null $title = null,
+        public string|null $description = null,
     ) {
     }
 }
