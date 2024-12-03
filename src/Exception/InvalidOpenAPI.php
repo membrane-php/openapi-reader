@@ -360,13 +360,13 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function keywordMustBeStrictlyPositiveNumber(
+    public static function keywordCannotBeZero(
         Identifier $identifier,
         string $keyword,
     ): self {
         $message = <<<TEXT
             $identifier
-            $keyword MUST be strictly greater than zero
+            $keyword MUST not be zero
             TEXT;
 
         return new self($message);
@@ -448,5 +448,14 @@ final class InvalidOpenAPI extends RuntimeException
             TEXT;
 
         return new self($message);
+    }
+
+    public static function defaultMustConformToType(
+        Identifier $identifier,
+    ): self {
+        return new self(<<<TEXT
+            $identifier
+              - default MUST conform to type
+            TEXT);
     }
 }

@@ -54,7 +54,7 @@ enum Type: string
         Identifier $identifier,
         OpenAPIVersion $version,
         string $type
-    ): ?self {
+    ): self {
         return self::tryFromVersion($version, $type) ??
             throw InvalidOpenAPI::invalidType($identifier, $type);
     }
