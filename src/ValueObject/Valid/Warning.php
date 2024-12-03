@@ -12,11 +12,11 @@ final class Warning
     ) {
     }
 
-    /**
-     * Warning code given for:
-     *     An API that is technically invalid but safely corrected.
-     */
-    public const INVALID_API = 'invalid-api';
+    public const INVALID = 'invalid';
+
+    public const MISLEADING = 'misleading';
+
+    public const REDUNDANT = 'redundant';
 
     /**
      * Server Variable: "enum" SHOULD NOT be empty
