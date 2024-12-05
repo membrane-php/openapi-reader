@@ -169,7 +169,7 @@ final class PartialHelper
         array|null $allOf = null,
         array|null $anyOf = null,
         array|null $oneOf = null,
-        bool|Schema $not = false,
+        bool|Schema|null $not = null,
         string $format = '',
         string $title = '',
         string $description = '',

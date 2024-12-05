@@ -7,7 +7,6 @@ namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
 use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
-use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesReviewedSchemas;
 use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
@@ -17,6 +16,7 @@ use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
+use Membrane\OpenAPIReader\ValueObject\Value;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
@@ -38,17 +38,17 @@ class SchemaTest extends TestCase
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
-    public function itReviewsSchema(Partial\Schema $schema, Warnings $warnings): void
+    public function itReviewsSchema(Partial\Schema $schema, array $warnings): void
     {
         $sut = new Schema(new Identifier('test'), $schema);
 
-        self::assertContainsEquals($warnings, $sut->getWarnings()->all());
+        self::assertEqualsCanonicalizing($warnings, $sut->getWarnings()->all());
     }
 
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
-    public function itAmendsSchema(
+    public function itSimplifiesSchema(
         Partial\Schema $schema,
         $_,
         string $propertyName,
@@ -56,7 +56,7 @@ class SchemaTest extends TestCase
     ): void {
         $sut = new Schema(new Identifier('test'), $schema);
 
-        self::assertEquals($expected, $sut->{$propertyName});
+        self::assertEquals($expected, $sut->value->{$propertyName});
     }
 
     #[Test]
@@ -140,7 +140,7 @@ class SchemaTest extends TestCase
     {
         $sut = new Schema(new Identifier(''), $schema);
 
-        self::assertEquals($expected, $sut->getRelevantMaximum());
+        self::assertEquals($expected, $sut->value->maximum);
     }
 
     #[Test]
@@ -150,20 +150,20 @@ class SchemaTest extends TestCase
     {
         $sut = new Schema(new Identifier(''), $schema);
 
-        self::assertEquals($expected, $sut->getRelevantMinimum());
+        self::assertEquals($expected, $sut->value->minimum);
     }
 
     /**
      * @param Type[] $expected
      */
     #[Test]
-    #[TestDox('It gets the types allowed, in a version agnostic format')]
+    #[TestDox('It gets types specified, in a version agnostic format')]
     #[DataProvider('provideSchemasToGetTypes')]
     public function itGetsTypes(array $expected, Partial\Schema $schema): void
     {
         $sut = new Schema(new Identifier(''), $schema);
 
-        self::assertEqualsCanonicalizing($expected, $sut->getTypes());
+        self::assertEqualsCanonicalizing($expected, $sut->value->types);
     }
 
     public static function provideInvalidSchemas(): Generator
@@ -182,6 +182,68 @@ class SchemaTest extends TestCase
             new Identifier('properties list'),
             new Partial\Schema(properties: [new Partial\Schema()]),
         ];
+
+        yield 'negative maxLength' => [
+            InvalidOpenAPI::keywordMustBeNonNegativeInteger(
+                new Identifier('negative maxLength'),
+                'maxLength',
+            ),
+            new Identifier('negative maxLength'),
+            new Partial\Schema(maxLength: -1),
+        ];
+
+        yield 'negative maxItems' => [
+            InvalidOpenAPI::keywordMustBeNonNegativeInteger(
+                new Identifier('negative maxItems'),
+                'maxItems',
+            ),
+            new Identifier('negative maxItems'),
+            new Partial\Schema(maxItems: -1),
+        ];
+
+        yield 'negative maxProperties' => [
+            InvalidOpenAPI::keywordMustBeNonNegativeInteger(
+                new Identifier('negative maxProperties'),
+                'maxProperties',
+            ),
+            new Identifier('negative maxProperties'),
+            new Partial\Schema(maxProperties: -1),
+        ];
+
+        yield 'zero multipleOf' => [
+            InvalidOpenAPI::keywordCannotBeZero(
+                new Identifier('zero multipleOf'),
+                'multipleOf',
+            ),
+            new Identifier('zero multipleOf'),
+            new Partial\Schema(multipleOf: 0),
+        ];
+
+        yield 'default does not conform to type' => [
+            InvalidOpenAPI::defaultMustConformToType(
+                new Identifier('non-conforming default'),
+            ),
+            new Identifier('non-conforming default'),
+            new Partial\Schema(type: 'string', default: new Value(1)),
+        ];
+
+        yield 'numeric exclusiveMaximum in 3.0' => [
+            InvalidOpenAPI::numericExclusiveMinMaxIn30(
+                new Identifier('numeric exclusiveMaximum'),
+                'exclusiveMaximum'
+            ),
+            new Identifier('numeric exclusiveMaximum'),
+            new Partial\Schema(exclusiveMaximum: 5),
+        ];
+
+        yield 'numeric exclusiveMinimum in 3.0' => [
+            InvalidOpenAPI::numericExclusiveMinMaxIn30(
+                new Identifier('numeric exclusiveMinimum'),
+                'exclusiveMinimum'
+            ),
+            new Identifier('numeric exclusiveMinimum'),
+            new Partial\Schema(exclusiveMinimum: 5),
+        ];
     }
 
     /**
@@ -195,53 +257,53 @@ class SchemaTest extends TestCase
     {
         foreach (Type::cases() as $typeToCheck) {
             yield "$typeToCheck->value? empty schema" => [
-              Type::casesForVersion(OpenAPIVersion::Version_3_0),
-              $typeToCheck,
-              PartialHelper::createSchema(),
+                Type::cases(),
+                $typeToCheck,
+                new Partial\Schema(),
             ];
 
             foreach (Type::casesForVersion(OpenAPIVersion::Version_3_0) as $type) {
                 yield "$typeToCheck->value? top level type: $type->value" => [
                     [$type],
                     $typeToCheck,
-                    PartialHelper::createSchema(type: $type->value)
+                    new Partial\Schema(type: $type->value)
                 ];
 
                 yield "$typeToCheck->value? allOf MUST be $type->value" => [
                     [$type],
                     $typeToCheck,
-                    PartialHelper::createSchema(allOf: [
-                        PartialHelper::createSchema(type: $type->value),
-                        PartialHelper::createSchema(type: $type->value),
+                    new Partial\Schema(allOf: [
+                        new Partial\Schema(type: $type->value),
+                        new Partial\Schema(type: $type->value),
                     ])
                 ];
 
                 yield "$typeToCheck->value? anyOf MUST be $type->value" => [
                     [$type],
                     $typeToCheck,
-                    PartialHelper::createSchema(anyOf: [
-                        PartialHelper::createSchema(type: $type->value),
-                        PartialHelper::createSchema(type: $type->value),
+                    new Partial\Schema(anyOf: [
+                        new Partial\Schema(type: $type->value),
+                        new Partial\Schema(type: $type->value),
                     ])
                 ];
 
                 yield "$typeToCheck->value? oneOf MUST be $type->value" => [
                     [$type],
                     $typeToCheck,
-                    PartialHelper::createSchema(oneOf: [
-                        PartialHelper::createSchema(type: $type->value),
-                        PartialHelper::createSchema(type: $type->value),
+                    new Partial\Schema(oneOf: [
+                        new Partial\Schema(type: $type->value),
+                        new Partial\Schema(type: $type->value),
                     ])
                 ];
 
                 yield "$typeToCheck->value? top-level type: string, allOf MUST be $type->value" => [
                     $type === Type::String ? [Type::String] : [],
                     $typeToCheck,
-                    PartialHelper::createSchema(
+                    new Partial\Schema(
                         type: Type::String->value,
                         allOf: [
-                            PartialHelper::createSchema(type: $type->value),
-                            PartialHelper::createSchema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
                         ]
                     )
                 ];
@@ -249,11 +311,11 @@ class SchemaTest extends TestCase
                 yield "$typeToCheck->value? top-level type: number, anyOf MUST be $type->value" => [
                     $type === Type::Number ? [Type::Number] : [],
                     $typeToCheck,
-                    PartialHelper::createSchema(
+                    new Partial\Schema(
                         type: Type::Number->value,
                         anyOf: [
-                            PartialHelper::createSchema(type: $type->value),
-                            PartialHelper::createSchema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
                         ]
                     )
                 ];
@@ -261,11 +323,11 @@ class SchemaTest extends TestCase
                 yield "$typeToCheck->value? top-level type: array, oneOf MUST be $type->value" => [
                     $type === Type::Array ? [Type::Array] : [],
                     $typeToCheck,
-                    PartialHelper::createSchema(
+                    new Partial\Schema(
                         type: Type::Array->value,
                         oneOf: [
-                            PartialHelper::createSchema(type: $type->value),
-                            PartialHelper::createSchema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
+                            new Partial\Schema(type: $type->value),
                         ]
                     )
                 ];
@@ -275,9 +337,9 @@ class SchemaTest extends TestCase
                     yield "$typeToCheck->value? anyOf MAY be $type->value|string" => [
                         [$type, Type::String],
                         $typeToCheck,
-                        PartialHelper::createSchema(anyOf: [
-                            PartialHelper::createSchema(type: 'string'),
-                            PartialHelper::createSchema(type: $type->value),
+                        new Partial\Schema(anyOf: [
+                            new Partial\Schema(type: 'string'),
+                            new Partial\Schema(type: $type->value),
                         ])
                     ];
                 }
@@ -286,9 +348,9 @@ class SchemaTest extends TestCase
                     yield "$typeToCheck->value? oneOf MAY be $type->value|boolean" => [
                         [$type, Type::Boolean],
                         $typeToCheck,
-                        PartialHelper::createSchema(oneOf: [
-                            PartialHelper::createSchema(type: 'boolean'),
-                            PartialHelper::createSchema(type: $type->value),
+                        new Partial\Schema(oneOf: [
+                            new Partial\Schema(type: 'boolean'),
+                            new Partial\Schema(type: $type->value),
                         ])
                     ];
                 }
@@ -297,10 +359,10 @@ class SchemaTest extends TestCase
                     yield "can it be $typeToCheck->value? allOf contains oneOf that may be $type->value|integer" => [
                         [$type, Type::Integer],
                         $typeToCheck,
-                        PartialHelper::createSchema(allOf: [
-                            PartialHelper::createSchema(oneOf: [
-                                PartialHelper::createSchema(type: $type->value),
-                                PartialHelper::createSchema(type: 'integer')
+                        new Partial\Schema(allOf: [
+                            new Partial\Schema(oneOf: [
+                                new Partial\Schema(type: $type->value),
+                                new Partial\Schema(type: 'integer')
                             ]),
                         ])
                     ];
@@ -335,7 +397,7 @@ class SchemaTest extends TestCase
     {
         yield 'no min or max' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: null,
@@ -345,7 +407,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive min' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: null,
@@ -355,7 +417,7 @@ class SchemaTest extends TestCase
 
         yield 'exclusive min' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: true,
                 maximum: null,
@@ -365,7 +427,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive max' => [
             new Limit(1, false),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: 1,
@@ -375,7 +437,7 @@ class SchemaTest extends TestCase
 
         yield 'exclusive max' => [
             new Limit(1, true),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: true,
                 exclusiveMinimum: false,
                 maximum: 1,
@@ -385,7 +447,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive max and exclusive min' => [
             new Limit(5, false),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: true,
                 maximum: 5,
@@ -404,7 +466,7 @@ class SchemaTest extends TestCase
     {
         yield 'no min or max' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: null,
@@ -414,7 +476,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive min' => [
             new Limit(1, false),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: null,
@@ -424,7 +486,7 @@ class SchemaTest extends TestCase
 
         yield 'exclusive min' => [
             new Limit(1, true),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: true,
                 maximum: null,
@@ -434,7 +496,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive max' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: false,
                 maximum: 1,
@@ -444,7 +506,7 @@ class SchemaTest extends TestCase
 
         yield 'exclusive max' => [
             null,
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: true,
                 exclusiveMinimum: false,
                 maximum: 1,
@@ -454,7 +516,7 @@ class SchemaTest extends TestCase
 
         yield 'inclusive max and exclusive min' => [
             new Limit(1, true),
-            PartialHelper::createSchema(
+            new Partial\Schema(
                 exclusiveMaximum: false,
                 exclusiveMinimum: true,
                 maximum: 5,
@@ -469,48 +531,48 @@ class SchemaTest extends TestCase
     public static function provideSchemasToGetTypes(): Generator
     {
         yield 'no type' => [
-            Type::casesForVersion(OpenAPIVersion::Version_3_0),
-            PartialHelper::createSchema(),
+            [],
+            new Partial\Schema(),
         ];
 
         yield 'nullable' => [
-            [Type::Null, ...Type::casesForVersion(OpenAPIVersion::Version_3_0)],
-            PartialHelper::createSchema(nullable: true)
+            [],
+            new Partial\Schema(nullable: true)
         ];
 
-        yield 'string' => [[Type::String], PartialHelper::createSchema(type: 'string')];
-        yield 'integer' => [[Type::Integer], PartialHelper::createSchema(type: 'integer')];
-        yield 'number' => [[Type::Number], PartialHelper::createSchema(type: 'number')];
-        yield 'boolean' => [[Type::Boolean], PartialHelper::createSchema(type: 'boolean')];
+        yield 'string' => [[Type::String], new Partial\Schema(type: 'string')];
+        yield 'integer' => [[Type::Integer], new Partial\Schema(type: 'integer')];
+        yield 'number' => [[Type::Number], new Partial\Schema(type: 'number')];
+        yield 'boolean' => [[Type::Boolean], new Partial\Schema(type: 'boolean')];
         yield 'array' => [
             [Type::Array],
-            PartialHelper::createSchema(type: 'array', items: PartialHelper::createSchema()),
+            new Partial\Schema(type: 'array', items: new Partial\Schema()),
         ];
-        yield 'object' => [[Type::Object], PartialHelper::createSchema(type: 'object')];
+        yield 'object' => [[Type::Object], new Partial\Schema(type: 'object')];
 
         yield 'nullable string' => [
             [Type::String, Type::Null],
-            PartialHelper::createSchema(type: 'string', nullable: true),
+            new Partial\Schema(type: 'string', nullable: true),
         ];
         yield 'nullable integer' => [
             [Type::Integer, Type::Null],
-            PartialHelper::createSchema(type: 'integer', nullable: true),
+            new Partial\Schema(type: 'integer', nullable: true),
         ];
         yield 'nullable number' => [
             [Type::Number, Type::Null],
-            PartialHelper::createSchema(type: 'number', nullable: true),
+            new Partial\Schema(type: 'number', nullable: true),
         ];
         yield 'nullable boolean' => [
             [Type::Boolean, Type::Null],
-            PartialHelper::createSchema(type: 'boolean', nullable: true),
+            new Partial\Schema(type: 'boolean', nullable: true),
         ];
         yield 'nullable array' => [
             [Type::Array, Type::Null],
-            PartialHelper::createSchema(type: 'array', nullable: true, items: PartialHelper::createSchema()),
+            new Partial\Schema(type: 'array', nullable: true, items: new Partial\Schema()),
         ];
         yield 'nullable object' => [
             [Type::Object, Type::Null],
-            PartialHelper::createSchema(type: 'object', nullable: true),
+            new Partial\Schema(type: 'object', nullable: true),
         ];
     }
 }
