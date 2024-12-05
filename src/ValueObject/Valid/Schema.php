@@ -6,5 +6,4 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid;
 
 interface Schema
 {
-
 }

@@ -45,5 +45,4 @@ final class Value implements Stringable
         return json_encode($this->value) ?:
             throw new RuntimeException('Failed to encode value');
     }
-
 }
