@@ -20,8 +20,8 @@ final class Schema
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#autoid-11
          * 3.1 https://json-schema.org/draft/2020-12/json-schema-validation#name-validation-keywords-for-any
          */
-        /** @var null|string|array<string> */
-        public null|string|array $type = null,
+        /** @var string[]|string|null */
+        public array|string|null $type = null,
         /** @var array<Value>|null */
         public array|null $enum = null,
         public Value|null $const = null,
@@ -81,7 +81,7 @@ final class Schema
         public array|null $anyOf = null,
         /** @var array<Schema>|null */
         public array|null $oneOf = null,
-        public Schema|null $not = null,
+        public bool|Schema|null $not = null,
         /**
          * Keywords for applying subschemas conditionally
          * 3.0 https://datatracker.ietf.org/doc/html/draft-wright-json-schema-validation-00#section-5.22

@@ -26,7 +26,11 @@ final class Schema extends Validated implements Valid\Schema
             $this->value = $schema;
         } else {
             try {
-                $this->value = new Keywords($identifier, $schema);
+                $this->value = new Keywords(
+                    $this->getIdentifier(),
+                    $this->getWarnings(),
+                    $schema
+                );
             } catch (SchemaShouldBeBoolean $e) {
                 $this->addWarning($e->getMessage(), Valid\Warning::IMPOSSIBLE_SCHEMA);
                 $this->value = $e->getCode() === SchemaShouldBeBoolean::ALWAYS_TRUE;

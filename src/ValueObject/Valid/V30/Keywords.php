@@ -63,9 +63,10 @@ final class Keywords extends Validated implements Valid\Schema
 
     public function __construct(
         Identifier $identifier,
+        Valid\Warnings $warnings,
         Partial\Schema $schema
     ) {
-        parent::__construct($identifier);
+        parent::__construct($identifier, $warnings);
 
         $this->types = $this->validateTypes($schema->type, $schema->nullable);
         $this->enum = $this->reviewEnum($this->types, $schema->enum);
@@ -102,11 +103,11 @@ final class Keywords extends Validated implements Valid\Schema
         $this->properties = $this->validateProperties($schema->properties);
         $this->additionalProperties = new Schema(
             $this->appendedIdentifier('additionalProperties'),
-            $schema->additionalProperties
+            $schema->additionalProperties,
         );
 
 
-        // make empty arrays instead of null
+        //TODO throw ShouldBeBooleanSchema::false if allOf contains false schema
         $this->allOf = $this->validateSubSchemas('allOf', $schema->allOf);
         $this->anyOf = $this->validateSubSchemas('anyOf', $schema->anyOf);
         $this->oneOf = $this->validateSubSchemas('oneOf', $schema->oneOf);
@@ -297,7 +298,7 @@ final class Keywords extends Validated implements Valid\Schema
         if (is_float($exclusiveMinMax) || is_integer($exclusiveMinMax)) {
             throw InvalidOpenAPI::numericExclusiveMinMaxIn30(
                 $this->getIdentifier(),
-                $keyword,
+                $exclusiveKeyword,
             );
         }
 
@@ -349,7 +350,7 @@ final class Keywords extends Validated implements Valid\Schema
 
         return new Schema(
             $this->getIdentifier()->append('items'),
-            $items ?? new Partial\Schema(),
+            $items ?? true,
         );
     }
 
@@ -393,12 +394,13 @@ final class Keywords extends Validated implements Valid\Schema
         }
 
         $result = [];
-        //TODO if all subschemas have a title, use that instead of their index
         foreach ($subSchemas as $index => $subSchema) {
-            $result[] = new Schema(
-                $this->getIdentifier()->append("$keyword($index)"),
-                $subSchema
-            );
+            $identifier = $this->appendedIdentifier($keyword, sprintf(
+                empty(trim($subSchema->title ?? '')) ? '%s' : '%2$s[%1$s]',
+                $index,
+                trim($subSchema->title ?? ''),
+            ));
+            $result[] = new Schema($identifier, $subSchema);
         }
 
         return $result;

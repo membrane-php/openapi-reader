@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Membrane\OpenAPIReader\ValueObject\Valid;
 
 /**
- * A Validated object **may** make _opinionated optimizations_ to improve DX.
+ * A Validated object **may** make _opinionated simplifications_ to improve DX.
  * - It **may** change _appearance_ from its OpenAPI counterpart.
  * - It **must** express the same _intent_ as its OpenAPI counterpart.
  */
@@ -15,8 +15,9 @@ abstract class Validated implements HasIdentifier, HasWarnings
 
     public function __construct(
         private readonly Identifier $identifier,
+        Warnings|null $warnings = null,
     ) {
-        $this->warnings = new Warnings($this->identifier);
+        $this->warnings = $warnings ?? new Warnings($this->identifier);
     }
 
     public function getIdentifier(): Identifier
