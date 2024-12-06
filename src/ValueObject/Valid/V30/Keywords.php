@@ -10,6 +10,7 @@ use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
+use Membrane\OpenAPIReader\ValueObject\Valid\Exception\SchemaShouldBeBoolean;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
@@ -20,7 +21,7 @@ final class Keywords extends Validated implements Valid\Schema
     /** @var list<Type> */
     public readonly array $types;
 
-    /** @var list<Value>|null */
+    /** @var non-empty-list<Value>|null */
     public readonly array|null $enum;
     public readonly Value|null $default;
 
@@ -212,23 +213,26 @@ final class Keywords extends Validated implements Valid\Schema
     /**
      * @param list<Type> $types
      * @param list<Value>|null $enum
-     * @return list<Value>
+     * @return non-empty-list<Value>
      */
     private function reviewEnum(
         array $types,
         array|null $enum,
-    ): array {
+    ): array|null {
         if ($enum === null) {
-            return [];
+            return null;
         }
 
         if ($enum === []) {
-            $this->addWarning('enum should not be empty', Warning::EMPTY_ENUM);
-            return $enum;
+            throw SchemaShouldBeBoolean::alwaysFalse(
+                $this->getIdentifier(),
+                'enum does not contain any values',
+            );
         }
 
-        if ($types === []) {
-            return $enum;
+        // TODO validate enum against more than just type.
+        if ($types === []) { // currently only type is checked against enum values
+            return array_values($enum); // so if it is empty, return
         }
 
         $enumContainsValidValue = false;
@@ -244,9 +248,9 @@ final class Keywords extends Validated implements Valid\Schema
         }
 
         if (! $enumContainsValidValue) {
-            throw Valid\Exception\SchemaShouldBeBoolean::alwaysFalse(
+            throw SchemaShouldBeBoolean::alwaysFalse(
                 $this->getIdentifier(),
-                'enum does not contain any valid values',
+                'enum does not contain any values that pass the schema',
             );
         }
 
