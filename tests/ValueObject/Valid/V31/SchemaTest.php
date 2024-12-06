@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V30;
+namespace Membrane\OpenAPIReader\Tests\ValueObject\Valid\V31;
 
 use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
@@ -12,7 +12,7 @@ use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
-use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
+use Membrane\OpenAPIReader\ValueObject\Valid\V31\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warnings;
@@ -37,7 +37,7 @@ class SchemaTest extends TestCase
 {
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
-    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
+    //#[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV31Reviews')]
     public function itReviewsSchema(Partial\Schema $schema, array $warnings): void
     {
         $sut = new Schema(new Identifier('test'), $schema);
@@ -47,7 +47,7 @@ class SchemaTest extends TestCase
 
     #[Test]
     #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
-    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV30Reviews')]
+    //#[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV31Reviews')]
     public function itSimplifiesSchema(
         Partial\Schema $schema,
         $_,
@@ -227,22 +227,22 @@ class SchemaTest extends TestCase
             new Partial\Schema(type: 'string', default: new Value(1)),
         ];
 
-        yield 'numeric exclusiveMaximum in 3.0' => [
-            InvalidOpenAPI::numericExclusiveMinMaxIn30(
-                new Identifier('numeric exclusiveMaximum'),
+        yield 'bool exclusiveMaximum in 3.0' => [
+            InvalidOpenAPI::boolExclusiveMinMaxIn31(
+                new Identifier('bool exclusiveMaximum'),
                 'exclusiveMaximum'
             ),
-            new Identifier('numeric exclusiveMaximum'),
-            new Partial\Schema(exclusiveMaximum: 5),
+            new Identifier('bool exclusiveMaximum'),
+            new Partial\Schema(exclusiveMaximum: true),
         ];
 
-        yield 'numeric exclusiveMinimum in 3.0' => [
-            InvalidOpenAPI::numericExclusiveMinMaxIn30(
-                new Identifier('numeric exclusiveMinimum'),
+        yield 'bool exclusiveMinimum in 3.0' => [
+            InvalidOpenAPI::boolExclusiveMinMaxIn31(
+                new Identifier('bool exclusiveMinimum'),
                 'exclusiveMinimum'
             ),
-            new Identifier('numeric exclusiveMinimum'),
-            new Partial\Schema(exclusiveMinimum: 5),
+            new Identifier('bool exclusiveMinimum'),
+            new Partial\Schema(exclusiveMinimum: false),
         ];
     }
 
@@ -395,63 +395,51 @@ class SchemaTest extends TestCase
      */
     public static function provideSchemasWithMax(): Generator
     {
-        yield 'no min or max' => [
+        yield 'no max' => [
             null,
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
+                exclusiveMaximum: null,
                 maximum: null,
-                minimum: null,
-            ),
-        ];
-
-        yield 'inclusive min' => [
-            null,
-            new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
-                maximum: null,
-                minimum: 1,
-            ),
-        ];
-
-        yield 'exclusive min' => [
-            null,
-            new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: true,
-                maximum: null,
-                minimum: 1,
             ),
         ];
 
         yield 'inclusive max' => [
             new Limit(1, false),
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
+                exclusiveMaximum: null,
                 maximum: 1,
-                minimum: null,
             ),
         ];
 
         yield 'exclusive max' => [
             new Limit(1, true),
             new Partial\Schema(
-                exclusiveMaximum: true,
-                exclusiveMinimum: false,
-                maximum: 1,
-                minimum: null,
+                exclusiveMaximum: 1,
+                maximum: null,
             ),
         ];
 
-        yield 'inclusive max and exclusive min' => [
-            new Limit(5, false),
+        yield 'exclusive wins when equal' => [
+            new Limit(1, true),
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: true,
-                maximum: 5,
-                minimum: 1,
+                exclusiveMaximum: 1,
+                maximum: 1,
+            ),
+        ];
+
+        yield 'exclusive wins when lower' => [
+            new Limit(1, true),
+            new Partial\Schema(
+                exclusiveMaximum: 1,
+                maximum: 2,
+            ),
+        ];
+
+        yield 'inclusive wins when lower' => [
+            new Limit(1, false),
+            new Partial\Schema(
+                exclusiveMaximum: 3,
+                maximum: 1,
             ),
         ];
     }
@@ -464,12 +452,10 @@ class SchemaTest extends TestCase
      */
     public static function provideSchemasWithMin(): Generator
     {
-        yield 'no min or max' => [
+        yield 'no min' => [
             null,
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
-                maximum: null,
+                exclusiveMinimum: null,
                 minimum: null,
             ),
         ];
@@ -477,9 +463,7 @@ class SchemaTest extends TestCase
         yield 'inclusive min' => [
             new Limit(1, false),
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
-                maximum: null,
+                exclusiveMinimum: null,
                 minimum: 1,
             ),
         ];
@@ -487,40 +471,32 @@ class SchemaTest extends TestCase
         yield 'exclusive min' => [
             new Limit(1, true),
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: true,
-                maximum: null,
-                minimum: 1,
-            ),
-        ];
-
-        yield 'inclusive max' => [
-            null,
-            new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: false,
-                maximum: 1,
+                exclusiveMinimum: 1,
                 minimum: null,
             ),
         ];
 
-        yield 'exclusive max' => [
-            null,
-            new Partial\Schema(
-                exclusiveMaximum: true,
-                exclusiveMinimum: false,
-                maximum: 1,
-                minimum: null,
-            ),
-        ];
-
-        yield 'inclusive max and exclusive min' => [
+        yield 'exclusive wins when equal' => [
             new Limit(1, true),
             new Partial\Schema(
-                exclusiveMaximum: false,
-                exclusiveMinimum: true,
-                maximum: 5,
+                exclusiveMinimum: 1,
                 minimum: 1,
+            ),
+        ];
+
+        yield 'exclusive wins when higher' => [
+            new Limit(3, true),
+            new Partial\Schema(
+                exclusiveMinimum: 3,
+                minimum: 1,
+            ),
+        ];
+
+        yield 'inclusive wins when higher' => [
+            new Limit(3, false),
+            new Partial\Schema(
+                exclusiveMinimum: 1,
+                minimum: 3,
             ),
         ];
     }
@@ -552,27 +528,27 @@ class SchemaTest extends TestCase
 
         yield 'nullable string' => [
             [Type::String, Type::Null],
-            new Partial\Schema(type: 'string', nullable: true),
+            new Partial\Schema(type: ['string', 'null']),
         ];
         yield 'nullable integer' => [
             [Type::Integer, Type::Null],
-            new Partial\Schema(type: 'integer', nullable: true),
+            new Partial\Schema(type: ['integer', 'null']),
         ];
         yield 'nullable number' => [
             [Type::Number, Type::Null],
-            new Partial\Schema(type: 'number', nullable: true),
+            new Partial\Schema(type: ['number', 'null']),
         ];
         yield 'nullable boolean' => [
             [Type::Boolean, Type::Null],
-            new Partial\Schema(type: 'boolean', nullable: true),
+            new Partial\Schema(type: ['boolean', 'null']),
         ];
         yield 'nullable array' => [
             [Type::Array, Type::Null],
-            new Partial\Schema(type: 'array', nullable: true, items: new Partial\Schema()),
+            new Partial\Schema(type: ['array', 'null'], items: new Partial\Schema()),
         ];
         yield 'nullable object' => [
             [Type::Object, Type::Null],
-            new Partial\Schema(type: 'object', nullable: true),
+            new Partial\Schema(type: ['object', 'null']),
         ];
     }
 }
