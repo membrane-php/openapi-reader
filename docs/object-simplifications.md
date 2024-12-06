@@ -16,12 +16,45 @@ All properties should have strong typehints.
 
 ## Opinionated Simplifications
 
-## Narrow Typehints
-Typehints are narrowed, if and only if, it has no impact on expressiveness.
+### Narrow Schemas To False If Impossible To Pass
+The `false` boolean schema explicitly states any input will fail.
+The Reader will narrow schemas to `false` if it is proven impossible to pass.
+This optimizes code that may otherwise validate input that will always fail.
 
-### String Metadata Is Always String
+#### Enum Specified Empty
+Any schema specifying an empty `enum`, is narrowed to the `false` boolean schema.
 
-Optional metadata is expressed in two ways;
+If `enum` is specified, it contains the exhaustive list of valid values.
+If `enum` is specified as an empty array, there are no valid values.
+
+#### Enum Without A Valid Value
+If a schema specifies `enum` without a value that passes the rest of the schema; 
+it is impossible to pass, it will be narrowed to the `false` boolean schema.
+
+### Narrow Typehints
+Typehints are narrowed if it has no impact on expressiveness.
+
+#### AllOf, AnyOf and OneOf Are Always Arrays
+
+`allOf`, `anyOf` and `oneOf` can express two things:
+1. There are subschemas
+2. There are not
+
+To express there are no subschemas, the value is omitted.
+
+As such, the Reader structures `allOf`, `anyOf` and `oneOf` in two ways:
+1. A non-empty array
+2. An empty array
+
+Though these keywords are not allowed to be empty,
+[The Reader allows it](validation-deviations.md#allof-anyof-and-oneof-can-be-empty)
+for the sake of simplicity.
+
+This simplifies code that loops through subschemas.
+
+#### String Metadata Is Always String
+
+Optional metadata is expressed in two ways:
 1. There is data
 2. There is not
 
@@ -37,20 +70,28 @@ if ($metadata !== '') {
 }
 ```
 
-## Combined Fields
+### Combined Fields
 Data is combined, if and only if, it has no impact on expressiveness.
 
-### Maximum|Minimum are combined with ExclusiveMaximum|ExclusiveMinimum
+#### Maximum|Minimum are combined with ExclusiveMaximum|ExclusiveMinimum
 
-The structure of numeric maximums and minimums vary between versions.
-However, both versions only express two things:
-- Is there a limit
-- Is it exclusive
+[//]: # (TODO explain how they are combined for 3.0 and in 3.1 we take the more restrictive keyword)
 
-As such the Reader combines the fields into:
-- A `Limit|null $maximum`. 
-- A `Limit|null $minimum`.
+A numerical limit can only be expressed in three ways:
+- There is no limit
+- There is an inclusive limit
+- There is an exclusive limit
 
-Where A `Limit` has two properties:
+As such the Reader combines the relevant keywords into:
+- `Limit|null $maximum`. 
+- `Limit|null $minimum`.
+
+Where `Limit` has two properties:
 - `float|int $limit` 
 - `bool $exclusive`
+
+#### Const Overrides Enum in 3.1
+
+[//]: # (TODO Flesh out a bit)
+
+The more restrictive keyword takes precedence.

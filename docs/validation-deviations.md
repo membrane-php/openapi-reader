@@ -49,10 +49,17 @@ Therefore, if a negative value is given:
 Normally, `allOf`, `anyOf` and `oneOf` MUST be non-empty.
 
 The Reader allows them to be empty.
+If any of these keywords are omitted, they are treated as empty arrays.
 
-[] and null express basically the same thing, no value.
-By replacing null with [], we can narrow the typehint from `array|null` to `array`.
-Simplifies code using it.
+
+Therefore, if an empty array is given:
+- You will receive a Warning
+- An empty array will be used.
+
+If it is omitted:
+- An empty array will be used.
+
+[This is done for simplicity](object-simplifications.md#allof-anyof-and-oneof-are-always-arrays).
 
 ### Required Can Be Empty 
 
