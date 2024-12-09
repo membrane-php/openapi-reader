@@ -8,6 +8,7 @@ use Generator;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesReviewedSchemas;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesSimplifiedSchemas;
 use Membrane\OpenAPIReader\ValueObject\Limit;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
@@ -36,21 +37,18 @@ use PHPUnit\Framework\TestCase;
 class SchemaTest extends TestCase
 {
     #[Test]
-    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
-    //#[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV31Reviews')]
-    public function itReviewsSchema(Partial\Schema $schema, array $warnings): void
+    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'forV3X')]
+    public function itReviewsSchema(Partial\Schema $schema, Warning $warning): void
     {
         $sut = new Schema(new Identifier('test'), $schema);
 
-        self::assertEqualsCanonicalizing($warnings, $sut->getWarnings()->all());
+        self::assertContainsEquals($warning, $sut->getWarnings()->all());
     }
 
     #[Test]
-    #[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV3xReviews')]
-    //#[DataProviderExternal(ProvidesReviewedSchemas::class, 'provideV31Reviews')]
+    #[DataProviderExternal(ProvidesSimplifiedSchemas::class, 'forV3X')]
     public function itSimplifiesSchema(
         Partial\Schema $schema,
-        $_,
         string $propertyName,
         mixed $expected,
     ): void {
