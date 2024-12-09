@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\Exception;
 
+use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
 use RuntimeException;
 
@@ -312,11 +313,14 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function typeArrayInWrongVersion(Identifier $identifier): self
-    {
+    public static function keywordMustBeType(
+        Identifier $identifier,
+        string $keyword,
+        Type $type,
+    ): self {
         $message = <<<TEXT
             $identifier
-            Specifying type as an array is only valid for OpenAPI ^3.1
+            $keyword MUST be $type->value
             TEXT;
 
         return new self($message);
@@ -356,19 +360,19 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function keywordMustBeStrictlyPositiveNumber(
+    public static function keywordCannotBeZero(
         Identifier $identifier,
         string $keyword,
     ): self {
         $message = <<<TEXT
             $identifier
-            $keyword MUST be strictly greater than zero
+            $keyword MUST not be zero
             TEXT;
 
         return new self($message);
     }
 
-    public static function keywordMustBeNegativeInteger(
+    public static function keywordMustBeNonNegativeInteger(
         Identifier $identifier,
         string $keyword,
     ): self {
@@ -444,5 +448,14 @@ final class InvalidOpenAPI extends RuntimeException
             TEXT;
 
         return new self($message);
+    }
+
+    public static function defaultMustConformToType(
+        Identifier $identifier,
+    ): self {
+        return new self(<<<TEXT
+            $identifier
+              - default MUST conform to type
+            TEXT);
     }
 }
