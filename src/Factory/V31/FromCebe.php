@@ -154,8 +154,12 @@ final class FromCebe
             default: isset($schema->default) ? new Value($schema->default) : null,
             nullable: $schema->nullable ?? false,
             multipleOf: $schema->multipleOf ?? null,
-            exclusiveMaximum: $schema->exclusiveMaximum ?? null,
-            exclusiveMinimum: $schema->exclusiveMinimum ?? null,
+            exclusiveMaximum: isset($schema->exclusiveMaximum) && $schema->exclusiveMaximum !== false ?
+                $schema->exclusiveMaximum :
+                null,
+            exclusiveMinimum: isset($schema->exclusiveMinimum) && $schema->exclusiveMinimum !== false ?
+                $schema->exclusiveMinimum :
+                null,
             maximum: $schema->maximum ?? null,
             minimum: $schema->minimum ?? null,
             maxLength: $schema->maxLength ?? null,
