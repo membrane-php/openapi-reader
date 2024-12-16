@@ -134,7 +134,7 @@ final class FromCebe
 
     private static function createSchema(
         Cebe\Reference|Cebe\Schema|null $schema
-    ): ?Schema {
+    ): Schema|null {
         assert(!$schema instanceof Cebe\Reference);
 
         if ($schema === null) {
