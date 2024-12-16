@@ -47,14 +47,14 @@ final class Parameter extends Validated
 
     public function __construct(
         Identifier $parentIdentifier,
-        Partial\Parameter $header
+        Partial\Parameter $parameter
     ) {
-        $this->name = $header->name ??
+        $this->name = $parameter->name ??
             throw InvalidOpenAPI::parameterMissingName($parentIdentifier);
 
         $this->in = $this->validateIn(
             $parentIdentifier,
-            $header->in,
+            $parameter->in,
         );
 
         $identifier = $parentIdentifier->append($this->name, $this->in->value);
@@ -63,24 +63,24 @@ final class Parameter extends Validated
         $this->required = $this->validateRequired(
             $identifier,
             $this->in,
-            $header->required
+            $parameter->required
         );
 
-        isset($header->schema) === empty($header->content) ?:
+        isset($parameter->schema) === empty($parameter->content) ?:
             throw InvalidOpenAPI::mustHaveSchemaXorContent($identifier);
 
-        if (isset($header->schema)) {
+        if (isset($parameter->schema)) {
             $this->content = [];
             $this->schema = new Schema(
                 $this->appendedIdentifier('schema'),
-                $header->schema
+                $parameter->schema
             );
         } else {
             $this->schema = null;
 
             $this->content = $this->validateContent(
                 $this->getIdentifier(),
-                $header->content
+                $parameter->content
             );
         }
 
@@ -88,10 +88,10 @@ final class Parameter extends Validated
             $identifier,
             $this->getSchema(),
             $this->in,
-            $header->style,
+            $parameter->style,
         );
 
-        $this->explode = $header->explode ?? $this->style->defaultExplode();
+        $this->explode = $parameter->explode ?? $this->style->defaultExplode();
     }
 
     public function getSchema(): Schema
