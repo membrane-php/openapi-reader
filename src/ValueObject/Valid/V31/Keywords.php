@@ -12,7 +12,6 @@ use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Type;
 use Membrane\OpenAPIReader\ValueObject\Valid\Exception\SchemaShouldBeBoolean;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
-use Membrane\OpenAPIReader\ValueObject\Valid\V30\Schema;
 use Membrane\OpenAPIReader\ValueObject\Valid\Validated;
 use Membrane\OpenAPIReader\ValueObject\Valid\Warning;
 use Membrane\OpenAPIReader\ValueObject\Value;
@@ -228,13 +227,15 @@ final class Keywords extends Validated implements Valid\Schema
 
         $enumContainsValidValue = false;
         foreach ($enum as $value) {
-            if (in_array($value->getType(), $types)) {
-                $enumContainsValidValue = true;
-            } else {
-                $this->addWarning(
-                    "$value does not match allowed types",
-                    Warning::MISLEADING,
-                );
+            foreach ($types as $type) {
+                if ($type->doesValueMatchType($value)) {
+                    $enumContainsValidValue = true;
+                } else {
+                    $this->addWarning(
+                        "$value does not match allowed types",
+                        Warning::MISLEADING,
+                    );
+                }
             }
         }
 
@@ -257,11 +258,12 @@ final class Keywords extends Validated implements Valid\Schema
             return null;
         }
 
-        if (! in_array($default->getType(), $types)) {
-            throw InvalidOpenAPI::defaultMustConformToType($this->getIdentifier());
+        foreach ($types as $type) {
+            if ($type->doesValueMatchType($default)) {
+                return $default;
+            }
         }
-
-        return $default;
+        throw InvalidOpenAPI::defaultMustConformToType($this->getIdentifier());
     }
 
     private function validateMultipleOf(float|int|null $value): float|int|null

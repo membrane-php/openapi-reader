@@ -7,6 +7,7 @@ namespace Membrane\OpenAPIReader\ValueObject\Valid\Enum;
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
 use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
+use Membrane\OpenAPIReader\ValueObject\Value;
 
 enum Type: string
 {
@@ -76,6 +77,16 @@ enum Type: string
             self::Array,
             self::Object => false,
             default => true,
+        };
+    }
+
+    public function doesValueMatchType(Value $value): bool
+    {
+        $type = $value->getType();
+
+        return match ($type) {
+            Type::Integer => $this === Type::Integer || $this === Type::Number,
+            default => $type === $this,
         };
     }
 }
