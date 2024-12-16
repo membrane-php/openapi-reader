@@ -354,7 +354,7 @@ class MembraneReaderTest extends TestCase
 
     #[Test]
     #[DataProviderExternal(ProvidesPetstoreApi::class, 'provideOperations')]
-    //#[DataProviderExternal(ProvidesTrainTravelApi::class, 'provideOperations')]
+    #[DataProviderExternal(ProvidesTrainTravelApi::class, 'provideOperations')]
     public function itReadsRealExamples(
         string $filepath,
         string $path,
