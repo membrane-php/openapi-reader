@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\ValueObject\Valid\V30;
+namespace Membrane\OpenAPIReader\ValueObject\Valid\V31;
 
 use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\Service\Url;
