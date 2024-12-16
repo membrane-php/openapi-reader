@@ -7,11 +7,14 @@ namespace Membrane\OpenAPIReader\Tests;
 use cebe\{openapi\exceptions as CebeException};
 use Generator;
 use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesPetstoreApi;
+use Membrane\OpenAPIReader\Tests\Fixtures\ProvidesTrainTravelApi;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\V31OpenAPIProvider;
 use Membrane\OpenAPIReader\{FileFormat, OpenAPIVersion};
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\MembraneReader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
+use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
@@ -59,15 +62,6 @@ class MembraneReaderTest extends TestCase
         self::expectExceptionObject(CannotSupport::noSupportedVersions());
 
         new MembraneReader([]);
-    }
-
-    #[Test]
-    #[TestDox('Currently only V3.0.X Membrane Objects are supported')]
-    public function itCurrentlySupportsOnlyV30(): void
-    {
-        self::expectExceptionObject(CannotSupport::membraneReaderOnlySupportsv30());
-
-        new MembraneReader([OpenAPIVersion::Version_3_1]);
     }
 
     #[Test]
@@ -326,12 +320,17 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test, DataProvider('provideOpenAPIToRead')]
-    public function itReadsFromFile(OpenAPI $expected, string $openApi): void
-    {
+    public function itReadsFromFile(
+        Valid\V30\OpenAPI|Valid\V31\OpenAPI $expected,
+        string $openApi
+    ): void {
         $filePath = vfsStream::setup()->url() . '/openapi.json';
         file_put_contents($filePath, $openApi);
 
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $actual = $sut->readFromAbsoluteFilePath($filePath, FileFormat::Json);
 
@@ -339,9 +338,14 @@ class MembraneReaderTest extends TestCase
     }
 
     #[Test, DataProvider('provideOpenAPIToRead')]
-    public function itReadsFromString(OpenAPI $expected, string $openApi): void
-    {
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+    public function itReadsFromString(
+        Valid\V30\OpenAPI|Valid\V31\OpenAPI $expected,
+        string $openApi
+    ): void {
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $actual = $sut->readFromString($openApi, FileFormat::Json);
 
@@ -350,13 +354,17 @@ class MembraneReaderTest extends TestCase
 
     #[Test]
     #[DataProviderExternal(ProvidesPetstoreApi::class, 'provideOperations')]
+    //#[DataProviderExternal(ProvidesTrainTravelApi::class, 'provideOperations')]
     public function itReadsRealExamples(
         string $filepath,
         string $path,
         Method $method,
-        Valid\V30\Operation $expected
+        Valid\V31\Operation|Valid\V30\Operation $expected
     ): void {
-        $sut = new MembraneReader([OpenAPIVersion::Version_3_0]);
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
 
         $api = $sut->readFromAbsoluteFilePath($filepath);
 
@@ -364,7 +372,6 @@ class MembraneReaderTest extends TestCase
 
         self::assertEquals($expected, $actual);
     }
-
 
     public static function provideInvalidFormatting(): Generator
     {
@@ -388,7 +395,7 @@ class MembraneReaderTest extends TestCase
             ];
         })();
 
-        $openAPI = ['openapi' => '3.0.0', 'info' => ['title' => '', 'version' => '1.0.0'], 'paths' => []];
+        $openAPI = ['openapi' => '3.0.0', 'info' => ['title' => 'test', 'version' => '1.0.0'], 'paths' => []];
         $openAPIPath = fn($operationId) => [
             'operationId' => $operationId,
             'responses' => [200 => ['description' => ' Successful Response']],
@@ -406,8 +413,8 @@ class MembraneReaderTest extends TestCase
                 return json_encode($openAPIArray);
             })(),
             InvalidOpenAPI::equivalentTemplates(
-                new Identifier('(1.0.0)', '/path/{param1}'),
-                new Identifier('(1.0.0)', '/path/{param2}'),
+                new Identifier('test(1.0.0)', '/path/{param1}'),
+                new Identifier('test(1.0.0)', '/path/{param2}'),
             ),
         ];
 
@@ -443,9 +450,12 @@ class MembraneReaderTest extends TestCase
                 $openAPIArray['paths'] = ['/firstpath' => ['get' => $path]];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent(
-                new Identifier('(1.0.0)', '/firstpath', 'get-first-path(get)', 'param(query)')
-            ),
+            InvalidOpenAPI::mustHaveSchemaXorContent(new Identifier(
+                'test(1.0.0)',
+                '/firstpath',
+                'get-first-path(get)',
+                'param(query)',
+            )),
         ];
 
         yield 'path with parameter both schema and content' => [
@@ -462,9 +472,11 @@ class MembraneReaderTest extends TestCase
                 ],];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent(
-                new Identifier('(1.0.0)', '/firstpath', 'param(query)')
-            ),
+            InvalidOpenAPI::mustHaveSchemaXorContent(new Identifier(
+                'test(1.0.0)',
+                '/firstpath',
+                'param(query)',
+            )),
         ];
 
         yield 'path with operation missing both schema and content' => [
@@ -476,9 +488,11 @@ class MembraneReaderTest extends TestCase
                 ]];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent(
-                new Identifier('(1.0.0)', '/firstpath', 'param(query)')
-            ),
+            InvalidOpenAPI::mustHaveSchemaXorContent(new Identifier(
+                'test(1.0.0)',
+                '/firstpath',
+                'param(query)',
+            )),
         ];
 
         yield 'path with operation both schema and content' => [
@@ -494,9 +508,12 @@ class MembraneReaderTest extends TestCase
                 $openAPIArray['paths'] = ['/firstpath' => ['get' => $path],];
                 return json_encode($openAPIArray);
             })(),
-            InvalidOpenAPI::mustHaveSchemaXorContent(
-                new Identifier('(1.0.0)', '/firstpath', 'get-first-path(get)', 'param(query)')
-            ),
+            InvalidOpenAPI::mustHaveSchemaXorContent(new Identifier(
+                'test(1.0.0)',
+                '/firstpath',
+                'get-first-path(get)',
+                'param(query)',
+            )),
         ];
     }
 
@@ -699,14 +716,24 @@ class MembraneReaderTest extends TestCase
 
     public static function provideOpenAPIToRead(): Generator
     {
-        yield 'minimal OpenAPI' => [
+        yield 'minimal V30' => [
             OpenAPIProvider::minimalV30MembraneObject(),
             OpenAPIProvider::minimalV30String(),
         ];
 
-        yield 'detailed OpenAPI' => [
+        yield 'detailed V30' => [
             OpenAPIProvider::detailedV30MembraneObject(),
             OpenAPIProvider::detailedV30String(),
+        ];
+
+        yield 'minimal V31' => [
+            V31OpenAPIProvider::minimalV31MembraneObject(),
+            V31OpenAPIProvider::minimalV31String(),
+        ];
+
+        yield 'detailed V31' => [
+            V31OpenAPIProvider::detailedV31MembraneObject(),
+            V31OpenAPIProvider::detailedV31String(),
         ];
     }
 }

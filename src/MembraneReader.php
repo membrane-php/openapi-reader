@@ -7,8 +7,7 @@ namespace Membrane\OpenAPIReader;
 use cebe\{openapi as Cebe, openapi\exceptions as CebeException, openapi\spec as CebeSpec};
 use Closure;
 use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI};
-use Membrane\OpenAPIReader\Factory\V30\FromCebe;
-use Membrane\OpenAPIReader\ValueObject\Valid\V30\OpenAPI;
+use Membrane\OpenAPIReader\ValueObject\Valid;
 use Symfony\Component\Yaml\Exception\ParseException;
 use TypeError;
 
@@ -21,15 +20,12 @@ final class MembraneReader
         if (empty($this->supportedVersions)) {
             throw CannotSupport::noSupportedVersions();
         }
-
-        /** todo create 3.1 validated objects */
-        if ($this->supportedVersions !== [OpenAPIVersion::Version_3_0]) {
-            throw CannotSupport::membraneReaderOnlySupportsv30();
-        }
     }
 
-    public function readFromAbsoluteFilePath(string $absoluteFilePath, ?FileFormat $fileFormat = null): OpenAPI
-    {
+    public function readFromAbsoluteFilePath(
+        string $absoluteFilePath,
+        ?FileFormat $fileFormat = null
+    ): Valid\V30\OpenAPI|Valid\V31\OpenAPI {
         file_exists($absoluteFilePath) ?: throw CannotRead::fileNotFound($absoluteFilePath);
 
         $fileFormat ??= FileFormat::fromFileExtension(pathinfo($absoluteFilePath, PATHINFO_EXTENSION));
@@ -47,7 +43,7 @@ final class MembraneReader
         return $this->getValidatedObject($openAPI);
     }
 
-    public function readFromString(string $openAPI, FileFormat $fileFormat): OpenAPI
+    public function readFromString(string $openAPI, FileFormat $fileFormat): Valid\V30\OpenAPI|Valid\V31\OpenAPI
     {
         if (preg_match('#\s*[\'\"]?\$ref[\'\"]?\s*:\s*[\'\"]?[^\s\'\"\#]#', $openAPI)) {
             throw CannotRead::cannotResolveExternalReferencesFromString();
@@ -77,19 +73,26 @@ final class MembraneReader
         }
     }
 
-    private function getValidatedObject(CebeSpec\OpenApi $openAPI): OpenAPI
+    private function getValidatedObject(CebeSpec\OpenApi $openAPI): Valid\V30\OpenAPI|Valid\V31\OpenAPI
     {
-        $this->isVersionSupported($openAPI->openapi) ?: throw CannotSupport::unsupportedVersion($openAPI->openapi);
+        $version = OpenAPIVersion::fromString($openAPI->openapi) ??
+            throw CannotSupport::unsupportedVersion($openAPI->openapi);
 
-        $validatedObject = FromCebe::createOpenAPI($openAPI);
+        $this->isVersionSupported($version) ?:
+            throw CannotSupport::unsupportedVersion($openAPI->openapi);
+
+        $validatedObject = match ($version) {
+            OpenAPIVersion::Version_3_0 => Factory\V30\FromCebe::createOpenAPI($openAPI),
+            OpenAPIVersion::Version_3_1 => Factory\V31\FromCebe::createOpenAPI($openAPI),
+        };
 
         $openAPI->validate() ?: throw InvalidOpenAPI::failedCebeValidation(...$openAPI->getErrors());
 
         return $validatedObject;
     }
 
-    private function isVersionSupported(string $version): bool
+    private function isVersionSupported(OpenAPIVersion $version): bool
     {
-        return in_array(OpenAPIVersion::fromString($version), $this->supportedVersions, true);
+        return in_array($version, $this->supportedVersions, true);
     }
 }
