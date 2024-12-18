@@ -44,7 +44,7 @@ final class Keywords extends Validated implements Valid\Schema
     public readonly array $required;
     /** @var array<string, Schema> */
     public readonly array $properties;
-    public readonly bool|Schema $additionalProperties;
+    public readonly Schema $additionalProperties;
 
     /** @var list<Schema> */
     public readonly array $allOf;
