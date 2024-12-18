@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Membrane\OpenAPIReader\Factory\V30;
+namespace Membrane\OpenAPIReader\Factory\V31;
 
 use cebe\openapi\spec as Cebe;
 use Membrane\OpenAPIReader\ValueObject\Partial\Header;
@@ -16,14 +16,14 @@ use Membrane\OpenAPIReader\ValueObject\Partial\Response;
 use Membrane\OpenAPIReader\ValueObject\Partial\Schema;
 use Membrane\OpenAPIReader\ValueObject\Partial\Server;
 use Membrane\OpenAPIReader\ValueObject\Partial\ServerVariable;
-use Membrane\OpenAPIReader\ValueObject\Valid\V30;
+use Membrane\OpenAPIReader\ValueObject\Valid\V31;
 use Membrane\OpenAPIReader\ValueObject\Value;
 
 final class FromCebe
 {
     public static function createOpenAPI(
         Cebe\OpenApi $openApi
-    ): V30\OpenAPI {
+    ): V31\OpenAPI {
         $servers = count($openApi->servers) === 1 && $openApi->servers[0]->url === '/' ?
             [] :
             $openApi->servers;
@@ -34,7 +34,7 @@ final class FromCebe
          * The reason for this is the cebe library does not specify that info is nullable
          * However it is not always set, so it can be null
          */
-        return V30\OpenAPI::fromPartial(new OpenAPI(
+        return V31\OpenAPI::fromPartial(new OpenAPI(
             $openApi->openapi,
             $openApi->info?->title, // @phpstan-ignore-line
             $openApi->info?->version, // @phpstan-ignore-line
@@ -154,8 +154,12 @@ final class FromCebe
             default: isset($schema->default) ? new Value($schema->default) : null,
             nullable: $schema->nullable ?? false,
             multipleOf: $schema->multipleOf ?? null,
-            exclusiveMaximum: $schema->exclusiveMaximum ?? false,
-            exclusiveMinimum: $schema->exclusiveMinimum ?? false,
+            exclusiveMaximum: isset($schema->exclusiveMaximum) && $schema->exclusiveMaximum !== false ?
+                $schema->exclusiveMaximum :
+                null,
+            exclusiveMinimum: isset($schema->exclusiveMinimum) && $schema->exclusiveMinimum !== false ?
+                $schema->exclusiveMinimum :
+                null,
             maximum: $schema->maximum ?? null,
             minimum: $schema->minimum ?? null,
             maxLength: $schema->maxLength ?? null,

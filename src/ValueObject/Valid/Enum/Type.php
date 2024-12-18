@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Membrane\OpenAPIReader\ValueObject\Valid\Enum;
 
+use Membrane\OpenAPIReader\Exception\InvalidOpenAPI;
 use Membrane\OpenAPIReader\OpenAPIVersion;
+use Membrane\OpenAPIReader\ValueObject\Valid\Identifier;
+use Membrane\OpenAPIReader\ValueObject\Value;
 
 enum Type: string
 {
@@ -48,6 +51,15 @@ enum Type: string
         return array_map(fn($t) => $t->value, self::casesForVersion($version));
     }
 
+    public static function fromVersion(
+        Identifier $identifier,
+        OpenAPIVersion $version,
+        string $type
+    ): self {
+        return self::tryFromVersion($version, $type) ??
+            throw InvalidOpenAPI::invalidType($identifier, $type);
+    }
+
     public static function tryFromVersion(
         OpenAPIVersion $version,
         string $type
@@ -65,6 +77,16 @@ enum Type: string
             self::Array,
             self::Object => false,
             default => true,
+        };
+    }
+
+    public function doesValueMatchType(Value $value): bool
+    {
+        $type = $value->getType();
+
+        return match ($type) {
+            Type::Integer => $this === Type::Integer || $this === Type::Number,
+            default => $type === $this,
         };
     }
 }
