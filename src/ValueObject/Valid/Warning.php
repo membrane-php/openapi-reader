@@ -12,6 +12,12 @@ final class Warning
     ) {
     }
 
+    public const INVALID = 'invalid';
+
+    public const MISLEADING = 'misleading';
+
+    public const REDUNDANT = 'redundant';
+
     /**
      * Server Variable: "enum" SHOULD NOT be empty
      * Schema: "enum" SHOULD have at least one element

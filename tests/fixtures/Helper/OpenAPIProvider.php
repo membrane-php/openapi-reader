@@ -211,7 +211,7 @@ final class OpenAPIProvider
                             name: 'limit',
                             in: 'query',
                             required: false,
-                            schema: PartialHelper::createSchema(
+                            schema: new Partial\Schema(
                                 type: 'integer'
                             )
                         ),
@@ -227,12 +227,12 @@ final class OpenAPIProvider
                                 content: [
                                     PartialHelper::createMediaType(
                                         mediaType: 'application/json',
-                                        schema: PartialHelper::createSchema(
+                                        schema: new Partial\Schema(
                                             allOf: [
-                                                PartialHelper::createSchema(
+                                                new Partial\Schema(
                                                     type: 'integer'
                                                 ),
-                                                PartialHelper::createSchema(
+                                                new Partial\Schema(
                                                     type: 'number'
                                                 )
                                             ]
@@ -258,7 +258,7 @@ final class OpenAPIProvider
                             name: 'limit',
                             in: 'query',
                             required: false,
-                            schema: PartialHelper::createSchema(
+                            schema: new Partial\Schema(
                                 type: 'integer'
                             )
                         ),
@@ -274,12 +274,12 @@ final class OpenAPIProvider
                                 content: [
                                     PartialHelper::createMediaType(
                                         mediaType: 'application/json',
-                                        schema: PartialHelper::createSchema(
+                                        schema: new Partial\Schema(
                                             allOf: [
-                                                PartialHelper::createSchema(
+                                                new Partial\Schema(
                                                     type: 'integer'
                                                 ),
-                                                PartialHelper::createSchema(
+                                                new Partial\Schema(
                                                     type: 'number'
                                                 )
                                             ]
@@ -302,7 +302,7 @@ final class OpenAPIProvider
                                 name: 'user',
                                 in: 'cookie',
                                 required: false,
-                                schema: PartialHelper::createSchema(
+                                schema: new Partial\Schema(
                                     type: 'object'
                                 )
                             )
