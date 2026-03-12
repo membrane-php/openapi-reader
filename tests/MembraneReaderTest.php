@@ -14,7 +14,6 @@ use Membrane\OpenAPIReader\Exception\{CannotRead, CannotSupport, InvalidOpenAPI}
 use Membrane\OpenAPIReader\Factory\V30\FromCebe;
 use Membrane\OpenAPIReader\MembraneReader;
 use Membrane\OpenAPIReader\Tests\Fixtures\Helper\OpenAPIProvider;
-use Membrane\OpenAPIReader\Tests\Fixtures\Helper\PartialHelper;
 use Membrane\OpenAPIReader\ValueObject\Partial;
 use Membrane\OpenAPIReader\ValueObject\Valid;
 use Membrane\OpenAPIReader\ValueObject\Valid\Enum\Method;
@@ -369,6 +368,62 @@ class MembraneReaderTest extends TestCase
         $api = $sut->readFromAbsoluteFilePath($filepath);
 
         $actual = $api->paths[$path]?->getOperations()[$method->value];
+
+        self::assertEquals($expected, $actual);
+    }
+
+    #[Test]
+    public function itReadsStringNumericKeysAsStrings(): void
+    {
+        $sut = new MembraneReader([
+            OpenAPIVersion::Version_3_0,
+            OpenAPIVersion::Version_3_1,
+        ]);
+
+        $api = json_encode([
+            'openapi' => '3.0.3',
+            'info' => [
+                'title' => 'Numeric Property Keys',
+                'version' => '1.0.0',
+            ],
+            'paths' => ['/foo' => ['parameters' => [[
+                'name' => 'object-with-numeric-keys',
+                'in' => 'query',
+                'schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        '1' => ['type' => 'string'],
+                    ]
+                ]
+            ]]]]
+        ]);
+
+        $expected = OpenAPI::fromPartial(new Partial\OpenAPI(
+            openAPI: '3.0.3',
+            title: 'Numeric Property Keys',
+            version: '1.0.0',
+            paths: [
+                new Partial\PathItem(
+                    path: '/foo',
+                    parameters: [
+                        new Partial\Parameter(
+                            name: 'object-with-numeric-keys',
+                            in: 'query',
+                            schema: new Partial\Schema(
+                                type: 'object',
+                                properties: [
+                                    '1' => new Partial\Schema(type: 'string'),
+                                ],
+                            )
+                        ),
+                    ]
+                )
+            ]
+        ));
+
+        $actual = $sut->readFromString($api, FileFormat::Json);
+
+
 
         self::assertEquals($expected, $actual);
     }

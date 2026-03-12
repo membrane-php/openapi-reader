@@ -423,16 +423,10 @@ final class Keywords extends Validated implements Valid\Schema
 
         $result = [];
         foreach ($properties as $key => $subSchema) {
-            if (!is_string($key)) {
-                throw InvalidOpenAPI::mustHaveStringKeys(
-                    $this->getIdentifier(),
-                    'properties',
-                );
-            }
-
-            $result[$key] = new Schema(
+            // json_decode casts numeric string keys to numbers
+            $result[(string) $key] = new Schema(
                 $this->getIdentifier()->append("properties($key)"),
-                $subSchema
+                $subSchema,
             );
         }
 
