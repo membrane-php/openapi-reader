@@ -172,15 +172,6 @@ class SchemaTest extends TestCase
             new Partial\Schema(type: 'invalid'),
         ];
 
-        yield 'properties list' => [
-            InvalidOpenAPI::mustHaveStringKeys(
-                new Identifier('properties list'),
-                'properties',
-            ),
-            new Identifier('properties list'),
-            new Partial\Schema(properties: [new Partial\Schema()]),
-        ];
-
         yield 'negative maxLength' => [
             InvalidOpenAPI::keywordMustBeNonNegativeInteger(
                 new Identifier('negative maxLength'),

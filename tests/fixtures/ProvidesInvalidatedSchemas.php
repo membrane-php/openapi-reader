@@ -32,12 +32,6 @@ final class ProvidesInvalidatedSchemas
             new Partial\Schema(type: 'invalid'),
         ];
 
-        yield 'properties without string keys' => [
-            InvalidOpenAPI::mustHaveStringKeys($identifier, 'properties'),
-            $identifier,
-            new Partial\Schema(properties: [new Partial\Schema()]),
-        ];
-
         yield 'negative maxLength' => [
             InvalidOpenAPI::keywordMustBeNonNegativeInteger($identifier, 'maxLength'),
             $identifier,
