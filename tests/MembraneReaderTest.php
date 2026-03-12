@@ -270,8 +270,10 @@ class MembraneReaderTest extends TestCase
 
     #[Test]
     #[DataProvider('provideOpenAPIWithExternalReference')]
-    public function itCannotResolveExternalReferenceFromString(string $openAPIString): void
-    {
+    public function itCannotResolveExternalReferenceFromString(
+        string $openAPIString,
+        string $_,
+    ): void {
         self::expectExceptionObject(CannotRead::cannotResolveExternalReferencesFromString());
 
         (new MembraneReader([OpenAPIVersion::Version_3_0]))

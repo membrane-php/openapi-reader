@@ -447,8 +447,10 @@ class ReaderTest extends TestCase
 
     #[Test]
     #[DataProvider('provideOpenAPIWithExternalReference')]
-    public function itCannotResolveExternalReferenceFromString(string $openAPIString,): void
-    {
+    public function itCannotResolveExternalReferenceFromString(
+        string $openAPIString,
+        string $_,
+    ): void {
         self::expectExceptionObject(CannotRead::cannotResolveExternalReferencesFromString());
 
         (new Reader([OpenAPIVersion::Version_3_0]))

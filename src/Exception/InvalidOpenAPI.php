@@ -424,7 +424,7 @@ final class InvalidOpenAPI extends RuntimeException
 
         return new self($message);
     }
-    
+
     public static function responseCodeMustBeNumericOrDefault(
         Identifier $identifier,
         string $code,

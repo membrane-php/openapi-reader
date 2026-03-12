@@ -114,7 +114,7 @@ final class PartialHelper
         ?string $operationId = 'test-id',
         array $servers = [],
         array $parameters = [],
-        RequestBody $requestBody = null,
+        ?RequestBody $requestBody = null,
         array $responses = [],
     ): Operation {
         return new Operation(
