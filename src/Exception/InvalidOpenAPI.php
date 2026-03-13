@@ -185,7 +185,7 @@ final class InvalidOpenAPI extends RuntimeException
     public static function parameterMissingLocation(Identifier $identifier): self
     {
         $message = <<<TEXT
-            $identifier 
+            $identifier
             This Parameter MUST have an "in" field specifying their location.
             Its value MUST be "path", "query", "header" or "cookie".
             TEXT;
@@ -201,7 +201,7 @@ final class InvalidOpenAPI extends RuntimeException
     public static function parameterMissingRequired(Identifier $identifier): self
     {
         $message = <<<TEXT
-            $identifier 
+            $identifier
             If the parameter location is "path", this property is REQUIRED and its value MUST be true.
             TEXT;
 
@@ -211,7 +211,7 @@ final class InvalidOpenAPI extends RuntimeException
     public static function parameterInvalidStyle(Identifier $identifier): self
     {
         $message = <<<TEXT
-            $identifier 
+            $identifier
             This Parameter has an invalid value for its "style" field.
             TEXT;
 
@@ -222,7 +222,7 @@ final class InvalidOpenAPI extends RuntimeException
     {
         $message = <<<TEXT
             $identifier
-            This Parameter has an incompatible combination of "style" and "in". 
+            This Parameter has an incompatible combination of "style" and "in".
             TEXT;
 
         return new self($message);
@@ -425,25 +425,13 @@ final class InvalidOpenAPI extends RuntimeException
         return new self($message);
     }
 
-    public static function mustHaveStringKeys(
-        Identifier $identifier,
-        string $keyword,
-    ): self {
-        $message = <<<TEXT
-            $identifier
-            $keyword MUST be specified an array with string keys
-            TEXT;
-
-        return new self($message);
-    }
-
     public static function responseCodeMustBeNumericOrDefault(
         Identifier $identifier,
         string $code,
     ): self {
         $message = <<<TEXT
             $identifier
-            Response code MUST be numeric, or "default". 
+            Response code MUST be numeric, or "default".
             "$code" is invalid.
             TEXT;
 
